@@ -461,7 +461,7 @@ a { color: var(--accent); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.22.0056';</script>
+<script>window.APP_VERSION = 'v2026.10.22.0059';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -2458,7 +2458,8 @@ a { color: var(--accent); }
         const tb = cf.teacher ? teacherBadge(app, it.adm) : '';
         const tg = cf.tags ? tagsHtml(app, it.patient) : '';
         const bits = [];
-        if (cf.sexAge) bits.push((it.patient.sex || '—') + ' ' + (it.patient.age != null && it.patient.age !== '' ? it.patient.age : '—'));
+        const hasAge = it.patient.age != null && it.patient.age !== '';
+        if (cf.sexAge && (it.patient.sex || hasAge)) bits.push((it.patient.sex || '—') + ' ' + (hasAge ? it.patient.age : '—'));
         if (cf.height && it.patient.height != null && it.patient.height !== '') bits.push(it.patient.height + ' cm');
         if (cf.admissionDate && it.adm.admissionDate) bits.push('入院 ' + root.UI.fmtDate(it.adm.admissionDate));
         const meta = bits.length ? '<div class="pc-surgery">' + esc(bits.join(' · ')) + '</div>' : '';
