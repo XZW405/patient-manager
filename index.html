@@ -489,6 +489,25 @@ button.date-row:active { transform: scale(.997); }
 @media (max-width: 640px) {
   .date-name { max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
+
+/* 常用诊断 / 术式快捷录入 */
+.quick-pick {
+  grid-column: 1 / -1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  margin-top: 2px;
+}
+.quick-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.quick-row:last-of-type { margin-bottom: 4px; }
+.quick-label { color: var(--muted); font-size: 11px; font-weight: 700; min-width: 58px; }
+.quick-pick .chip { min-height: 30px; padding: 4px 9px; font-size: 12px; background: var(--card); }
+.quick-pick .chip[data-act="quick-surgery"] { border-style: dashed; color: var(--accent); }
+.quick-hint { color: var(--faint); font-size: 11px; line-height: 1.4; }
+@media (max-width: 520px) {
+  .quick-label { min-width: 100%; margin-bottom: -2px; }
+}
 </style>
 </head>
 <body>
@@ -496,7 +515,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.22.0129';</script>
+<script>window.APP_VERSION = 'v2026.10.22.0151';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -1852,8 +1871,8 @@ button.date-row:active { transform: scale(.997); }
       dressingInterval: 2,
       stitchOffset: 14,
       teachers: [
-        { id: 't1', name: '张' },
-        { id: 't2', name: '李' }
+        { id: 't1', name: '张', color: '#7c3aed' },
+        { id: 't2', name: '李', color: '#2563eb' }
       ],
       tags: [
         { id: 'mei', label: '梅', color: '#d13b6b' },
@@ -2244,7 +2263,10 @@ button.date-row:active { transform: scale(.997); }
   function teacherBadge(app, adm) {
     const name = teacherName(app, adm.teacherId);
     const ch = name === '—' ? '—' : name.slice(0, 1);
-    return '<span class="teacher-badge ' + (name === '—' ? 'empty' : '') + '" title="带教老师：' + esc(name) + '">' + esc(ch) + '</span>';
+    const t = (app.state.data.settings.teachers || []).find(function (x) { return x.id === adm.teacherId; });
+    const color = t && t.color ? t.color : '#7c3aed';
+    const style = name === '—' ? '' : 'background:' + esc(color) + ';color:#fff;';
+    return '<span class="teacher-badge ' + (name === '—' ? 'empty' : '') + '" style="' + style + '" title="带教老师：' + esc(name) + '">' + esc(ch) + '</span>';
   }
 
   function tagsHtml(app, patient) {
@@ -2766,6 +2788,7 @@ button.date-row:active { transform: scale(.997); }
           '<div class="field"><label>入院日期</label><input name="admissionDate" type="date" value="' + val(a.admissionDate) + '"></div>' +
           '<div class="field" style="grid-column:1/-1"><label>主诊断 *</label><input name="diagnosis" value="' + val(a.diagnosis) + '" placeholder="如 左膝骨关节炎"></div>' +
           '</div>' +
+          app.quickPickHtml(false) +
           '<div class="form-note" style="margin-top:10px">手术日期入库后在详情页补；带教老师在「收进组」时选择。没填手术日期不会排拔管/换药/拆线。</div>' +
           '</section>') +
       '<section class="card"><h2>现病史</h2><div class="field"><textarea name="presentIllness" placeholder="起病时间、加重时间、主要症状、诊疗经过…">' + val(i.presentIllness) + '</textarea></div></section>' +
@@ -2826,6 +2849,7 @@ button.date-row:active { transform: scale(.997); }
     const discharged = app.dischargedList();
     const teacherRows = (s.teachers || []).map(function (t) {
       return '<div class="list-row"><input type="text" class="teacher-name" data-id="' + esc(t.id) + '" value="' + esc(t.name) + '">' +
+        '<input type="color" class="color-input teacher-color" data-id="' + esc(t.id) + '" value="' + esc(t.color || '#7c3aed') + '">' +
         '<button type="button" class="btn small ghost" data-act="remove-teacher" data-id="' + esc(t.id) + '">删除</button></div>';
     }).join('');
     const tagRows = (s.tags || []).map(function (t) {
@@ -3042,6 +3066,20 @@ button.date-row:active { transform: scale(.997); }
         case 'edit-admission': this.openEditAdmission(adId); break;
         case 'save-admission': this.saveAdmission(adId); break;
         case 'add-patient': this.openAddPatient(); break;
+        case 'quick-diagnosis': {
+          const form = el.closest('form');
+          const diag = form && form.querySelector('[name="diagnosis"]');
+          const surgery = form && form.querySelector('[name="surgeryName"]');
+          if (diag) diag.value = el.getAttribute('data-diagnosis') || diag.value;
+          if (surgery && el.getAttribute('data-surgery')) surgery.value = el.getAttribute('data-surgery');
+          break;
+        }
+        case 'quick-surgery': {
+          const form = el.closest('form');
+          const surgery = form && form.querySelector('[name="surgeryName"]');
+          if (surgery) surgery.value = el.getAttribute('data-surgery') || surgery.value;
+          break;
+        }
         case 'promote': this.openPromote(adId); break;
         case 'discharge': this.requestDischarge(adId); break;
         case 'archive': this.archive(adId); break;
@@ -3598,6 +3636,7 @@ button.date-row:active { transform: scale(.997); }
         '<div class="field"><label>床号 *</label><input name="bed" value="' + UI.esc(adm.bed || '') + '"></div>' +
         '<div class="field"><label>入院日期</label><input name="admissionDate" type="date" value="' + UI.esc(adm.admissionDate || '') + '"></div>' +
         '<div class="field" style="grid-column:1/-1"><label>主诊断 *</label><input name="diagnosis" value="' + UI.esc(adm.diagnosis || '') + '"></div>' +
+        this.quickPickHtml(true) +
         '<div class="field"><label>手术名称</label><input name="surgeryName" value="' + UI.esc(adm.surgeryName || '') + '"></div>' +
         '<div class="field"><label>手术日期</label><input name="surgeryDate" type="date" value="' + UI.esc(adm.surgeryDate || '') + '"></div>' +
         '<div class="field" style="grid-column:1/-1"><label>备注</label><textarea name="notes" placeholder="如 糖尿病、抗凝药、家属联系方式…">' + UI.esc(p.notes || '') + '</textarea></div>' +
@@ -3662,6 +3701,30 @@ button.date-row:active { transform: scale(.997); }
       return true;
     },
 
+    // ---------- 常用诊断 / 术式快捷录入 ----------
+    quickPickHtml(withSurgery) {
+      const self = this;
+      const diags = [
+        ['左膝', '左膝骨关节炎', 'TKA'],
+        ['右膝', '右膝骨关节炎', 'TKA'],
+        ['左髋', '左髋关节病', 'THA'],
+        ['右髋', '右髋关节病', 'THA'],
+        ['左股骨颈', '左股骨颈骨折', 'THA'],
+        ['右股骨颈', '右股骨颈骨折', 'THA']
+      ];
+      const diagChips = diags.map(function (x) {
+        return '<button type="button" class="chip" data-act="quick-diagnosis" data-diagnosis="' + UI.esc(x[1]) + '" data-surgery="' + UI.esc(x[2]) + '" title="' + UI.esc(x[1]) + '">' + UI.esc(x[0]) + '</button>';
+      }).join('');
+      const surgeryChips = [['TKA', 'TKA'], ['UKA', 'UKA'], ['THA', 'THA']].map(function (x) {
+        return '<button type="button" class="chip" data-act="quick-surgery" data-surgery="' + UI.esc(x[0]) + '">' + UI.esc(x[1]) + '</button>';
+      }).join('');
+      return '<div class="quick-pick">' +
+        '<div class="quick-row"><span class="quick-label">常用诊断</span>' + diagChips + '</div>' +
+        (withSurgery ? '<div class="quick-row"><span class="quick-label">术式</span>' + surgeryChips + '</div>' : '') +
+        '<div class="quick-hint">' + (withSurgery ? '点诊断会填入诊断和默认术式；膝可再点 TKA / UKA，也可直接改文字。' : '点一下填入诊断；术式稍后在详情补充。') + '</div>' +
+        '</div>';
+    },
+
     // ---------- 患者卡片（直接进患者栏，不写病史模板） ----------
     admissionFormHtml(p, adm) {
       const s = this.state.data.settings;
@@ -3683,6 +3746,7 @@ button.date-row:active { transform: scale(.997); }
         '<div class="field"><label>床号 *</label><input name="bed" value="' + UI.esc(a.bed || '') + '"></div>' +
         '<div class="field"><label>入院日期</label><input name="admissionDate" type="date" value="' + UI.esc(a.admissionDate || '') + '"></div>' +
         '<div class="field" style="grid-column:1/-1"><label>主诊断</label><input name="diagnosis" value="' + UI.esc(a.diagnosis || '') + '"></div>' +
+        this.quickPickHtml(true) +
         '<div class="field"><label>手术名称</label><input name="surgeryName" value="' + UI.esc(a.surgeryName || '') + '"></div>' +
         '<div class="field"><label>手术日期</label><input name="surgeryDate" type="date" value="' + UI.esc(a.surgeryDate || '') + '"></div>' +
         '<div class="field" style="grid-column:1/-1"><label>备注</label><textarea name="notes" placeholder="如 糖尿病、抗凝药、家属联系方式…">' + UI.esc(p.notes || '') + '</textarea></div>' +
@@ -4369,10 +4433,14 @@ button.date-row:active { transform: scale(.997); }
         height: fd.get('cardHeight') === 'on',
         admissionDate: fd.get('cardAdmissionDate') === 'on'
       };
-      s.teachers = Array.from(document.querySelectorAll('#teacher-list .teacher-name')).map((input) => ({
-        id: input.getAttribute('data-id'),
-        name: input.value.trim()
-      })).filter((t) => t.name);
+      s.teachers = Array.from(document.querySelectorAll('#teacher-list .teacher-name')).map((input) => {
+        const color = document.querySelector('#teacher-list .teacher-color[data-id="' + input.getAttribute('data-id') + '"]');
+        return {
+          id: input.getAttribute('data-id'),
+          name: input.value.trim(),
+          color: color ? color.value : '#7c3aed'
+        };
+      }).filter((t) => t.name);
       s.tags = Array.from(document.querySelectorAll('#tag-list .tag-label')).map((input) => {
         const color = document.querySelector('#tag-list .tag-color[data-id="' + input.getAttribute('data-id') + '"]');
         return {
@@ -4392,6 +4460,7 @@ button.date-row:active { transform: scale(.997); }
       const id = Store.uid();
       list.insertAdjacentHTML('beforeend',
         '<div class="list-row"><input type="text" class="teacher-name" data-id="' + id + '" value="" placeholder="老师姓氏">' +
+        '<input type="color" class="color-input teacher-color" data-id="' + id + '" value="#7c3aed">' +
         '<button type="button" class="btn small ghost" data-act="remove-teacher" data-id="' + id + '">删除</button></div>');
     },
 
