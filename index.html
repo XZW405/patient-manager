@@ -415,7 +415,7 @@ a { color: var(--accent); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.21.1907';</script>
+<script>window.APP_VERSION = 'v2026.10.21.1911';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -2094,6 +2094,7 @@ a { color: var(--accent); }
     const items = app.filtered();
     const total = app.admittedList().length;
     const f = app.state.filter;
+    const cf = s.cardFields || {};
 
     function chip(label, active, act, value, count, extraClass, style) {
       return '<button class="chip ' + (active ? 'active' : '') + ' ' + (extraClass || '') + '" ' +
@@ -2151,10 +2152,12 @@ a { color: var(--accent); }
         '</div>';
     } else if (app.state.listMode === 'table') {
       const rows = items.map(function (it) {
+        const tb = cf.teacher ? teacherBadge(app, it.adm) : '';
+        const tg = cf.tags ? tagsHtml(app, it.patient) : '';
         return '<tr data-act="detail" data-id="' + esc(it.adm.id) + '">' +
           '<td class="bed">' + esc(it.adm.bed) + '</td>' +
-          '<td class="name"><div class="row" style="gap:6px">' + teacherBadge(app, it.adm) + '<span>' + esc(it.patient.name) + '</span>' +
-            '<span class="pc-tags">' + tagsHtml(app, it.patient) + '</span></div></td>' +
+          '<td class="name"><div class="row" style="gap:6px">' + tb + '<span>' + esc(it.patient.name) + '</span>' +
+            '<span class="pc-tags">' + tg + '</span></div></td>' +
           '<td class="diag">' + esc(it.adm.diagnosis || '—') + '</td>' +
           '<td class="surgery">' + esc(surgeryLine(app, it.adm)) + '</td>' +
           '<td class="todo-cell">' + todoBadge(it.task) + '</td>' +
@@ -2165,15 +2168,23 @@ a { color: var(--accent); }
         '</tr></thead><tbody>' + rows + '</tbody></table></div>';
     } else {
       listHtml = '<div class="cards">' + items.map(function (it) {
+        const tb = cf.teacher ? teacherBadge(app, it.adm) : '';
+        const tg = cf.tags ? tagsHtml(app, it.patient) : '';
+        const bits = [];
+        if (cf.sexAge) bits.push((it.patient.sex || '—') + ' ' + (it.patient.age != null && it.patient.age !== '' ? it.patient.age : '—'));
+        if (cf.height && it.patient.height != null && it.patient.height !== '') bits.push(it.patient.height + ' cm');
+        if (cf.admissionDate && it.adm.admissionDate) bits.push('入院 ' + root.UI.fmtDate(it.adm.admissionDate));
+        const meta = bits.length ? '<div class="pc-surgery">' + esc(bits.join(' · ')) + '</div>' : '';
         return '<button class="patient-card" data-act="detail" data-id="' + esc(it.adm.id) + '">' +
-          '<div class="pc-top">' + teacherBadge(app, it.adm) +
+          '<div class="pc-top">' + tb +
           '<span class="pc-bed">' + esc(it.adm.bed) + '</span>' +
           '<span class="pc-name">' + esc(it.patient.name) + '</span>' +
           '<span class="pc-status">' + root.UI.statusBadge(it.adm.status) + '</span></div>' +
           '<div class="pc-diag">' + esc(it.adm.diagnosis || '未填主诊断') + '</div>' +
           '<div class="pc-surgery">' + esc(surgeryLine(app, it.adm)) + '</div>' +
+          meta +
           '<div class="pc-bottom">' + todoBadge(it.task) +
-          '<span class="pc-tags">' + tagsHtml(app, it.patient) + '</span></div>' +
+          (tg ? '<span class="pc-tags">' + tg + '</span>' : '') + '</div>' +
           '</button>';
       }).join('') + '</div>';
     }
