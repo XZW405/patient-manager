@@ -28,6 +28,7 @@
   --amber-soft: #fef3c7;
   --purple: #7c3aed;
   --purple-soft: #ede9fe;
+  --plus-accent: #0f766e;
   --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 8px 24px rgba(16, 24, 40, .05);
   --radius: 16px;
   color-scheme: light dark;
@@ -151,7 +152,8 @@ a { color: var(--accent); }
   border-radius: 50%; background: var(--accent); border-color: var(--accent);
   color: #fff; font-size: 26px; font-weight: 400; line-height: 1;
 }
-.btn.plus.tiny { width: 32px; min-width: 32px; height: 32px; font-size: 20px; border-radius: 50%; }
+.btn.plus.tiny { width: 32px; min-width: 32px; height: 32px; min-height: 32px; font-size: 20px; border-radius: 50%; padding: 0; line-height: 1; }
+.btn.plus.add-accent { background: var(--plus-accent); border-color: var(--plus-accent); color: #fff; }
 .btn:disabled { opacity: .45; pointer-events: none; }
 .icon-btn { border: 0; background: transparent; color: var(--muted); font-size: 20px; padding: 6px; border-radius: 8px; }
 
@@ -182,6 +184,7 @@ a { color: var(--accent); }
 .todo-badge.amber { background: var(--amber-soft); color: var(--amber); }
 .todo-badge.grey { background: var(--bg); color: var(--muted); }
 .todo-badge.green { background: var(--green-soft); color: var(--green); }
+.todo-badge.discharge { background: var(--red-soft); color: var(--red); font-weight: 800; }
 
 /* 统计 */
 .statline { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
@@ -225,6 +228,8 @@ a { color: var(--accent); }
 }
 .ov-title .count { color: var(--faint); font-size: 12px; font-weight: 600; }
 .ov-group.overdue .ov-title { color: var(--red); background: var(--red-soft); }
+.ov-group.discharge { border-color: color-mix(in srgb, var(--red) 45%, var(--border)); }
+.ov-group.discharge .ov-title { color: var(--red); background: var(--red-soft); }
 .ov-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
 .ov-chip {
   display: inline-flex; align-items: center; gap: 6px;
@@ -238,6 +243,8 @@ a { color: var(--accent); }
 .ov-chip.completed { opacity: .5; }
 .ov-chip.completed .task { text-decoration: line-through; }
 .ov-chip.overdue { border-color: color-mix(in srgb, var(--red) 45%, var(--border)); background: color-mix(in srgb, var(--red-soft) 45%, var(--card)); }
+.ov-chip.discharge { border-color: color-mix(in srgb, var(--red) 45%, var(--border)); background: color-mix(in srgb, var(--red-soft) 45%, var(--card)); }
+.ov-chip.discharge .task { color: var(--red); }
 .ov-empty { padding: 28px 16px; text-align: center; color: var(--muted); }
 
 /* 列表 */
@@ -316,6 +323,8 @@ a { color: var(--accent); }
 .task-row:last-child { border-bottom: 0; }
 .task-row.overdue .task-rel { color: var(--red); }
 .task-row.upcoming .task-rel { color: var(--amber); }
+.task-row.discharge { border: 1px solid color-mix(in srgb, var(--red) 45%, var(--border)); border-radius: 10px; padding: 8px; margin: 4px 0; background: color-mix(in srgb, var(--red-soft) 38%, var(--card)); }
+.task-row.discharge .task-name { color: var(--red); }
 .task-main { flex: 1 1 100px; min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
 .task-name { font-weight: 700; font-size: 13px; line-height: 1.35; }
 .task-every { color: var(--faint); font-size: 10px; font-weight: 500; margin-left: 4px; white-space: nowrap; }
@@ -334,6 +343,7 @@ a { color: var(--accent); }
 .history-group-head { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
 .detail-footer { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--border); }
 .detail-footer .btn { flex: 1 1 120px; }
+.detail-footer .footer-note { flex: 1 1 100%; }
 .photo-label { color: var(--muted); font-size: 12px; font-weight: 650; margin-bottom: 6px; }
 
 /* 空状态 */
@@ -454,6 +464,31 @@ a { color: var(--accent); }
   .filter-label { flex-basis: 32px; }
   .detail-title h1 { font-size: 21px; }
 }
+
+
+/* 任务日期视图 */
+.date-group { overflow: visible; }
+.date-list { display: grid; gap: 6px; padding: 10px 12px; }
+.date-row {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  width: 100%; text-align: left; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); border-radius: 10px;
+  padding: 8px 10px; min-height: 42px;
+}
+button.date-row:active { transform: scale(.997); }
+.date-bed { font-weight: 800; font-size: 14px; }
+.date-name { color: var(--muted); font-size: 12px; }
+.date-task { font-weight: 700; font-size: 13px; }
+.date-status { margin-left: auto; color: var(--accent); font-size: 11px; font-weight: 700; }
+.date-row.completed { opacity: .56; }
+.date-row.completed .date-task { text-decoration: line-through; }
+.date-row.discharge { border-color: color-mix(in srgb, var(--red) 45%, var(--border)); background: color-mix(in srgb, var(--red-soft) 38%, var(--card)); }
+.date-row.discharge .date-task, .date-row.discharge .date-status { color: var(--red); }
+.date-record { flex: 1; min-width: 150px; font-size: 12px; color: var(--muted); }
+.date-record b { color: var(--text); }
+@media (max-width: 640px) {
+  .date-name { max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
 </style>
 </head>
 <body>
@@ -461,7 +496,7 @@ a { color: var(--accent); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.22.0059';</script>
+<script>window.APP_VERSION = 'v2026.10.22.0129';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -488,7 +523,8 @@ a { color: var(--accent); }
     preop_mark: '备术',
     drain: '待拔管',
     dressing: '换药',
-    stitch: '拆线'
+    stitch: '拆线',
+    discharge: '出院'
   };
 
   const TASK_CATEGORY = {
@@ -497,7 +533,8 @@ a { color: var(--accent); }
     preop_mark: 'preop',
     drain: 'drain',
     dressing: 'dressing',
-    stitch: 'stitch'
+    stitch: 'stitch',
+    discharge: 'discharge'
   };
 
   // 旧数据里可能同时有理胶片 / 画标记两条；新规则只保留一个「备术」任务。
@@ -512,7 +549,7 @@ a { color: var(--accent); }
     nonplanned: '非计划换药'
   };
 
-  const CATEGORY_ORDER = ['overdue', 'preop', 'surgery', 'drain', 'dressing', 'stitch', 'other', 'free'];
+  const CATEGORY_ORDER = ['overdue', 'discharge', 'preop', 'surgery', 'drain', 'dressing', 'stitch', 'other', 'free'];
   const CATEGORY_LABELS = {
     overdue: '逾期',
     preop: '备术',
@@ -520,6 +557,7 @@ a { color: var(--accent); }
     drain: '拔管',
     dressing: '换药',
     stitch: '拆线',
+    discharge: '出院',
     other: '其他待办',
     free: '自由待办'
   };
@@ -768,6 +806,32 @@ a { color: var(--accent); }
     let nextDressingDate = '';
     let stitchEnded = false;
 
+    // 出院：详情点「出院」后生成，卡片保留到归档；出院任务排最前。
+    const dischargeDate = admission.dischargeDate || '';
+    if (dischargeDate) {
+      const evs = allEvents.filter(function (e) { return e.taskType === 'discharge'; });
+      const term = terminalEvent(evs);
+      if (term) {
+        const status = term.action === 'not_needed' ? 'not_needed' : 'done';
+        tasks.push(makeTask(admission, 'discharge', '出院', 'discharge', dischargeDate, status,
+          ['done', 'defer', 'senior', 'not_needed'], {
+            doneDate: term.date,
+            bySenior: term.action === 'senior',
+            eventId: term.id
+          }, t));
+        if ((term.action === 'done' || term.action === 'senior') && term.date === t) {
+          completedToday.push(completion(admission, 'discharge', '出院', term));
+        }
+      } else {
+        const plan = taskPlan(admission, 'discharge');
+        const manual = !!(plan && validDate(plan.dueDate) && !planHasLaterEvent(plan, evs));
+        let due = planDue(plan, evs, dischargeDate);
+        due = applyDefer(due, evs);
+        tasks.push(makeTask(admission, 'discharge', '出院', 'discharge', due, dueStatus(due, t),
+          ['done', 'defer', 'senior', 'not_needed'], { manual: manual }, t));
+      }
+    }
+
     // 术前：D-1。旧数据的理胶片 / 画标记合并成一个「备术」。
     if (surgeryDate) {
       const preopDue = addDays(surgeryDate, -1);
@@ -977,8 +1041,10 @@ a { color: var(--accent); }
       }
     });
 
-    // 不设优先级：最近到期的排最上面；没有日期的排最后。
+    // 出院任务固定第一；其余不设优先级，按最近到期排序，无日期最后。
     tasks.sort(function (a, b) {
+      if (a.type === 'discharge' && b.type !== 'discharge') return -1;
+      if (b.type === 'discharge' && a.type !== 'discharge') return 1;
       const da = a.dueDate || '9999-12-31';
       const db = b.dueDate || '9999-12-31';
       if (da !== db) return da < db ? -1 : 1;
@@ -1112,6 +1178,20 @@ a { color: var(--accent); }
       const patient = patientMap[a.patientId];
 
       res.tasks.forEach(function (task) {
+        if (task.type === 'discharge') {
+          if (task.status === 'overdue') {
+            overdue += 1;
+            unfinishedToday += 1;
+            addRow(todayGroups.discharge, a, patient, task, false, task.label);
+          } else if (task.status === 'pending' && task.dueDate === t) {
+            todayTodo += 1;
+            unfinishedToday += 1;
+            addRow(todayGroups.discharge, a, patient, task, false, task.label);
+          } else if (task.status === 'upcoming' && task.dueDate === tomorrow) {
+            addRow(tomorrowGroups.discharge, a, patient, task, false, task.label);
+          }
+          return;
+        }
         if (task.status === 'overdue') {
           overdue += 1;
           unfinishedToday += 1;
@@ -2205,6 +2285,7 @@ a { color: var(--accent); }
     else if (task.status === 'upcoming') cls = 'amber';
     else if (task.status === 'done') cls = 'green';
     else if (task.status === 'not_needed') cls = 'grey';
+    if (task.type === 'discharge') cls = (cls ? cls + ' ' : '') + 'discharge';
     let text = task.label;
     if (task.status === 'overdue') text = '逾期' + task.overdueDays + '天 · ' + task.label;
     else if (task.status === 'pending') text = '今日' + task.label;
@@ -2214,10 +2295,11 @@ a { color: var(--accent); }
 
   function todayBadge(task) {
     const red = task.status === 'overdue' ? ' red' : '';
+    const discharge = task.type === 'discharge' ? ' discharge' : '';
     const text = task.status === 'overdue'
       ? '逾期' + task.overdueDays + '天 · ' + task.label
       : task.label;
-    return '<span class="todo-badge' + red + '">' + esc(text) + '</span>';
+    return '<span class="todo-badge' + red + discharge + '">' + esc(text) + '</span>';
   }
 
   function todayBadges(tasks) {
@@ -2229,7 +2311,7 @@ a { color: var(--accent); }
     const canAct = t.status !== 'done' && t.status !== 'not_needed';
     const rel = t.relative || root.Engine.relativeDayLabel(t.dueDate, app.state.today);
     const interval = t.interval ? '<span class="task-every">每 ' + esc(t.interval) + ' 天</span>' : '';
-    return '<div class="task-row ' + esc(t.status) + '">' +
+    return '<div class="task-row ' + esc(t.status) + (t.type === 'discharge' ? ' discharge' : '') + '">' +
       '<button class="task-main" data-act="task-plan" data-admission="' + esc(adm.id) + '" data-type="' + esc(t.type) + '" title="点这里改下一次日期 / 循环天数">' +
       '<span class="task-name">' + esc(t.label) + interval + '</span>' +
       '<span class="task-rel">' + esc(rel) + '</span>' +
@@ -2301,6 +2383,7 @@ a { color: var(--accent); }
 
   // ---------- 总览 ----------
   Views.overview = function (app) {
+    if (app.state.overviewDate) return Views.taskDate(app, app.state.overviewDate);
     const ov = app.overview();
     const day = app.state.overviewDay;
     const groups = day === 'tomorrow' ? ov.tomorrow : ov.today;
@@ -2313,6 +2396,8 @@ a { color: var(--accent); }
       if (day === 'tomorrow' && cat === 'overdue') return false;
       return (groups[cat] || []).length > 0;
     }).sort(function (a, b) {
+      if (a === 'discharge') return -1;
+      if (b === 'discharge') return 1;
       const ea = (groups[a] || []).reduce(function (m, r) { const d = r.earliestDue || '9999-12-31'; return d < m ? d : m; }, '9999-12-31');
       const eb = (groups[b] || []).reduce(function (m, r) { const d = r.earliestDue || '9999-12-31'; return d < m ? d : m; }, '9999-12-31');
       return ea < eb ? -1 : (ea > eb ? 1 : 0);
@@ -2353,15 +2438,15 @@ a { color: var(--accent); }
     }
 
     const unfinished = ov.unfinishedToday || 0;
-    return '<div class="page-head"><div><h1>总览</h1><div class="sub">' +
+    return '<div class="page-head"><div><h1>任务</h1><div class="sub">' +
       (day === 'tomorrow' ? '明日 ' + root.UI.fmtDate(tomorrowDate) + ' ' + root.UI.weekday(tomorrowDate)
         : '今日 ' + root.UI.fmtDate(app.state.today) + ' ' + root.UI.weekday(app.state.today)) +
       ' · 在院 ' + ov.stats.inHospital + ' 人</div></div>' +
       '<div class="page-actions">' +
       '<div class="seg"><button class="' + (day === 'today' ? 'active' : '') + '" data-act="ov-day" data-value="today">今日</button>' +
       '<button class="' + (day === 'tomorrow' ? 'active' : '') + '" data-act="ov-day" data-value="tomorrow">明日</button></div>' +
-      '<button class="btn small ghost" data-act="history">历史</button>' +
-      '<button class="btn plus" data-act="free-todo" aria-label="加自由待办" title="加自由待办">+</button>' +
+      '<button class="btn small ghost" data-act="task-date">日期</button>' +
+      '<button class="btn plus add-accent" data-act="free-todo" aria-label="加自由待办" title="加自由待办">+</button>' +
       '</div></div>' +
       '<div class="statline">' +
       '<span class="stat"><b>' + ov.stats.inHospital + '</b>在院</span>' +
@@ -2371,6 +2456,43 @@ a { color: var(--accent); }
       '</div>' +
       (day === 'tomorrow' && unfinished ? '<div class="form-note">今日还有 ' + unfinished + ' 项未完成，明日会转成逾期。</div>' : '') +
       '<div class="ov-groups">' + body + '</div>';
+  };
+
+  // ---------- 任务：按日期查看 ----------
+  Views.taskDate = function (app, date) {
+    const data = app.tasksOnDate(date);
+    const dn = root.Engine.diffDays(date, app.state.today);
+    const rel = dn === 0 ? '今天' : (dn > 0 ? dn + ' 天后' : '过去 ' + (-dn) + ' 天');
+    const expected = data.expected.map(function (x) {
+      const t = x.task;
+      const status = x.complete ? (t.status === 'not_needed' ? '不再需要' : '已完成') : (t.type === 'surgery' ? '手术' : (dn === 0 ? '今天' : (dn < 0 ? '未完成' : '预期')));
+      const cls = t.type === 'discharge' ? ' discharge' : (x.complete ? ' completed' : '');
+      const body = '<span class="date-bed">' + esc(x.adm.bed || '') + '</span>' +
+        '<span class="date-name">' + esc(x.patient.name || '') + '</span>' +
+        '<span class="date-task">' + esc(t.label) + '</span>' +
+        '<span class="date-status">' + esc(status) + '</span>';
+      if (x.freeOnly || !x.adm.id) return '<div class="date-row' + cls + '">' + body + '</div>';
+      return '<button class="date-row' + cls + '" data-act="detail" data-id="' + esc(x.adm.id) + '">' + body + '</button>';
+    }).join('') || '<div class="empty"><h3>这一天没有预期任务</h3><p>可以换一天，或到患者详情里补任务。</p></div>';
+    const records = data.records.map(function (x) {
+      return '<div class="date-row">' +
+        '<span class="date-bed">' + esc(x.adm.bed || '') + '</span>' +
+        '<span class="date-name">' + esc(x.patient.name || '') + '</span>' +
+        '<span class="date-record"><b>' + esc(x.h.label) + '</b> · ' + esc(x.h.actionLabel) + (x.h.note ? ' · ' + esc(x.h.note) : '') + '</span>' +
+        '<button class="btn small ghost" data-act="edit-event" data-event="' + esc(x.h.eventId || x.h.id) + '">编辑</button>' +
+        '</div>';
+    }).join('') || '<div class="empty"><h3>这一天没有记录</h3><p>在患者详情完成的动作会出现在这里。</p></div>';
+    return '<div class="page-head"><div><h1>任务</h1><div class="sub">' + esc(date) + ' ' + esc(root.UI.weekday(date)) +
+      ' · ' + esc(rel) + ' · 在院 ' + data.inHospital + ' 人</div></div>' +
+      '<div class="page-actions">' +
+      '<button class="btn small ghost" data-act="task-today">今天</button>' +
+      '<button class="btn small ghost" data-act="task-date">日期</button>' +
+      '<button class="btn plus add-accent" data-act="free-todo" aria-label="加自由待办" title="加自由待办">+</button>' +
+      '</div></div>' +
+      '<section class="ov-group date-group"><div class="ov-title"><span>当天预期任务</span><span class="count">' + data.expected.length + ' 项</span></div>' +
+      '<div class="date-list">' + expected + '</div></section>' +
+      '<section class="ov-group date-group"><div class="ov-title"><span>当天记录</span><span class="count">' + data.records.length + ' 项</span></div>' +
+      '<div class="date-list">' + records + '</div></section>';
   };
 
   // ---------- 患者列表 ----------
@@ -2546,9 +2668,14 @@ a { color: var(--accent); }
     const backIcon = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 5l-6 7 6 7"/></svg>';
     const footer = '<div class="detail-footer">' +
       (adm.status === 'pending' ? '<button class="btn primary" data-act="promote" data-id="' + esc(adm.id) + '">收进组</button>' : '') +
-      (adm.status === 'admitted' ? '<button class="btn ghost" data-act="discharge" data-id="' + esc(adm.id) + '">出院</button>' : '') +
+      (adm.status === 'admitted'
+        ? '<button class="btn ' + (adm.dischargeDate ? 'ghost' : 'primary') + '" data-act="discharge" data-id="' + esc(adm.id) + '">' +
+          (adm.dischargeDate ? '出院（已安排）' : '出院') + '</button>' +
+          '<button class="btn ghost" data-act="archive" data-id="' + esc(adm.id) + '">归档</button>'
+        : '') +
       (adm.status === 'discharged' ? '<button class="btn good" data-act="restore" data-id="' + esc(adm.id) + '">改回在院</button>' : '') +
       '<button class="btn danger" data-act="delete-admission" data-id="' + esc(adm.id) + '">删除</button>' +
+      (adm.status === 'admitted' ? '<div class="small muted footer-note">点「出院」只建出院任务，卡片保留；点「归档」后才移入设置里的已出院。</div>' : '') +
       '</div>';
 
     return '<div class="detail-back-row">' +
@@ -2568,14 +2695,14 @@ a { color: var(--accent); }
         ['手术', esc(adm.surgeryName || '—')],
         ['手术日期', esc(root.UI.fmtDateFull(adm.surgeryDate))],
         ['带教老师', esc(teacherName(app, adm.teacherId))],
-        ['状态', esc(adm.status === 'admitted' ? '在院' : (adm.status === 'pending' ? '待入院' : '已出院'))],
+        ['状态', esc(adm.status === 'admitted' ? (adm.dischargeDate ? '在院（出院已安排）' : '在院') : (adm.status === 'pending' ? '待入院' : '已出院'))],
         ['备注', p.notes ? '<div class="text-block note-text">' + esc(p.notes) + '</div>' : '—']
       ]) +
       (res.backfilled ? '<div class="small faint" style="margin-top:8px">补录：录入前任务已按默认天数跳过。</div>' : '') +
       (bedHistory ? '<h3 style="margin-top:12px">床位变迁</h3>' + bedHistory : '') +
       '</section>' +
       '<section class="card todo-card"><div class="card-head"><h2>待办 <span class="small muted">' + ctx.tasks.length + ' 项</span></h2>' +
-      '<button class="btn plus tiny" data-act="free-todo" data-admission="' + esc(adm.id) + '" aria-label="加待办" title="加待办">+</button></div>' +
+      '<button class="btn plus tiny add-accent" data-act="free-todo" data-admission="' + esc(adm.id) + '" aria-label="加待办" title="加待办">+</button></div>' +
       '<div class="task-list">' + taskRows + '</div></section>' +
       '</div>' +
       '<section class="card"><div class="card-head"><h2>任务历史</h2><button class="btn small ghost" data-act="history" data-id="' + esc(adm.id) + '">返工 / 全部</button></div>' +
@@ -2789,6 +2916,7 @@ a { color: var(--accent); }
     state: {
       page: 'overview',
       overviewDay: 'today',
+      overviewDate: '',
       listMode: 'cards',
       filter: { teacherId: 'all', surgery: 'all', tagIds: [] },
       q: '',
@@ -2915,7 +3043,8 @@ a { color: var(--accent); }
         case 'save-admission': this.saveAdmission(adId); break;
         case 'add-patient': this.openAddPatient(); break;
         case 'promote': this.openPromote(adId); break;
-        case 'discharge': this.discharge(adId); break;
+        case 'discharge': this.requestDischarge(adId); break;
+        case 'archive': this.archive(adId); break;
         case 'restore': this.restore(adId); break;
         case 'delete-admission': this.deleteAdmission(adId); break;
         case 'detail': this.go('detail', adId); break;
@@ -2959,7 +3088,19 @@ a { color: var(--accent); }
           this.state.listMode = el.getAttribute('data-value') === 'table' ? 'table' : 'cards';
           this.render(); break;
         case 'ov-day':
+          this.state.overviewDate = '';
           this.state.overviewDay = el.getAttribute('data-value') === 'tomorrow' ? 'tomorrow' : 'today';
+          this.render(); break;
+        case 'task-date': this.openTaskDate(); break;
+        case 'task-date-shortcut': {
+          const pick = document.getElementById('task-date-pick');
+          if (pick) pick.value = el.getAttribute('data-value') || this.state.today;
+          break;
+        }
+        case 'task-today':
+          this.state.overviewDate = '';
+          this.state.overviewDay = 'today';
+          this.state.page = 'overview';
           this.render(); break;
         case 'save-settings': this.saveSettings(); break;
         case 'add-teacher': this.addTeacherRow(); break;
@@ -2991,7 +3132,7 @@ a { color: var(--accent); }
       const pending = this.pendingList().length;
       const page = this.state.page;
       const nav = [
-        ['overview', '总览'],
+        ['overview', '任务'],
         ['list', '患者'],
         ['pending', '待入院'],
         ['settings', '设置']
@@ -3082,6 +3223,93 @@ a { color: var(--accent); }
     overview() {
       return Engine.buildOverview(this.state.data.admissions, this.state.data.patients,
         this.state.data.events, this.state.data.freeTodos, this.state.data.settings, this.state.today);
+    },
+    tasksOnDate(date) {
+      const d = date;
+      const events = this.state.data.events || [];
+      const freeAll = this.state.data.freeTodos || [];
+      const expected = [];
+      const records = [];
+      this.admittedList().forEach((adm) => {
+        const patient = this.patient(adm.patientId) || { name: '', tags: [] };
+        const all = events.filter((e) => e.admissionId === adm.id && !e.deletedAt);
+        const asOf = all.filter((e) => (e.date || '') <= d);
+        const free = freeAll.map((f) => {
+          if (!f || f.admissionId !== adm.id || !f.doneAt) return f;
+          const dd = Engine.localDateFromISO(f.doneAt);
+          return dd && dd > d ? Object.assign({}, f, { doneAt: '' }) : f;
+        });
+        const res = Engine.computeAdmission(adm, asOf, free, this.state.data.settings, d);
+        res.tasks.forEach((task) => {
+          if (task.dueDate !== d) return;
+          expected.push({ adm: adm, patient: patient, task: task, complete: task.status === 'done' || task.status === 'not_needed' });
+        });
+        if (adm.surgeryDate === d) {
+          expected.push({ adm: adm, patient: patient, surgery: true, task: { type: 'surgery', label: '手术', dueDate: d, status: 'surgery' } });
+        }
+        const ctx = this.context(adm.id);
+        const hist = ctx ? ctx.res.history : [];
+        all.filter((e) => e.date === d).forEach((e) => {
+          const h = hist.find((x) => (x.eventId || x.id) === e.id) || {
+            eventId: e.id, id: e.id, label: Engine.TASK_LABELS[e.taskType] || '待办',
+            actionLabel: Engine.ACTION_LABELS[e.action] || e.action, note: e.note || ''
+          };
+          records.push({ adm: adm, patient: patient, h: h });
+        });
+      });
+      // 未锚定患者的自由待办也显示在日期视图里。
+      freeAll.forEach((f) => {
+        if (!f || f.deletedAt || f.admissionId || f.dueDate !== d) return;
+        const doneDate = f.doneAt ? Engine.localDateFromISO(f.doneAt) : '';
+        const complete = doneDate === d;
+        expected.push({
+          adm: { id: '', patientId: '', bed: '' }, patient: { name: '自由待办' },
+          freeOnly: true,
+          task: { type: 'free', label: f.title || '待办', dueDate: d, status: complete ? 'done' : 'pending', freeTodoId: f.id },
+          complete: complete
+        });
+      });
+      expected.sort((a, b) => {
+        if (a.task.type === 'discharge' && b.task.type !== 'discharge') return -1;
+        if (b.task.type === 'discharge' && a.task.type !== 'discharge') return 1;
+        const bed = Engine.compareBed(a.adm.bed, b.adm.bed);
+        if (bed) return bed;
+        return String(a.task.label).localeCompare(String(b.task.label), 'zh-Hans-CN');
+      });
+      records.sort((a, b) => {
+        const bed = Engine.compareBed(a.adm.bed, b.adm.bed);
+        if (bed) return bed;
+        return String(a.h.label).localeCompare(String(b.h.label), 'zh-Hans-CN');
+      });
+      return { date: d, expected: expected, records: records, inHospital: this.admittedList().length };
+    },
+    openTaskDate() {
+      const current = this.state.overviewDate || this.state.today;
+      const self = this;
+      UI.modal({
+        title: '按日期查看任务',
+        body: '<form id="task-date-form">' +
+          '<p class="small muted">选一天，查看当天预期任务和已记录，并可直接改记录。</p>' +
+          '<div class="field"><label>日期</label><input id="task-date-pick" type="date" value="' + UI.esc(current) + '"></div>' +
+          '<div class="row" style="margin-top:10px"><button type="button" class="btn small ghost" data-act="task-date-shortcut" data-value="' + UI.esc(this.state.today) + '">今天</button>' +
+          '<button type="button" class="btn small ghost" data-act="task-date-shortcut" data-value="' + UI.esc(Engine.addDays(this.state.today, 1)) + '">明天</button></div>' +
+          '</form>',
+        actions: [
+          { label: '取消', className: 'ghost' },
+          {
+            label: '查看这一天', className: 'primary', onClick: async function (close) {
+              const el = document.getElementById('task-date-pick');
+              const v = el ? el.value : '';
+              if (!Engine.validDate(v)) { UI.toast('日期无效'); return; }
+              self.state.overviewDate = v;
+              self.state.overviewDay = 'date';
+              self.state.page = 'overview';
+              self.render();
+              close();
+            }
+          }
+        ]
+      });
     },
     filterCounts() {
       return Engine.filterCounts(this.state.data.admissions, this.state.data.patients, this.state.today);
@@ -3591,28 +3819,61 @@ a { color: var(--accent); }
       return true;
     },
 
-    async discharge(id) {
+    async requestDischarge(id) {
       const adm = this.admission(id);
       if (!adm) return;
-      const ok = await UI.confirm('确定出院？任务会停止，历史保留，可再改回在院。', { okLabel: '出院' });
-      if (!ok) return;
-      const old = adm.status;
-      adm.status = 'discharged';
+      if (adm.status !== 'admitted') { UI.toast('只有在院患者可以建出院任务'); return; }
+      const evs = (this.state.data.events || []).filter((e) => e.admissionId === id && e.taskType === 'discharge' && !e.deletedAt);
+      const terminal = Engine.terminalEvent(evs);
+      if (terminal && (terminal.action === 'done' || terminal.action === 'senior')) {
+        UI.toast('出院任务已完成，可点「归档」');
+        return;
+      }
+      if (terminal && terminal.action === 'not_needed') {
+        UI.toast('出院任务已被标记为不再需要；可点「归档」或删除');
+        return;
+      }
+      if (adm.dischargeDate === this.state.today) {
+        UI.toast('今天的出院任务已经建好了');
+        return;
+      }
+      const old = adm.dischargeDate || '';
+      adm.dischargeDate = this.state.today;
       adm.updatedAt = Store.nowISO();
       await Store.put('admissions', adm);
       await this.reload();
-      UI.toast('已出院', async () => {
-        adm.status = old;
+      UI.toast('已建出院任务；卡片保留', async () => {
+        adm.dischargeDate = old;
         adm.updatedAt = Store.nowISO();
         await Store.put('admissions', adm);
         await this.reload();
       });
     },
 
+    async archive(id) {
+      const adm = this.admission(id);
+      if (!adm) return;
+      if (adm.status !== 'admitted') { UI.toast('只有在院患者可以归档'); return; }
+      const ok = await UI.confirm('归档后从患者列表移除，进入设置里的「已出院」；任务历史保留。', { okLabel: '归档' });
+      if (!ok) return;
+      adm.status = 'discharged';
+      adm.archivedAt = Store.nowISO();
+      adm.dischargeDate = '';
+      if (adm.taskPlans) delete adm.taskPlans.discharge;
+      adm.updatedAt = adm.archivedAt;
+      await Store.put('admissions', adm);
+      await this.reload();
+      this.go('list');
+      UI.toast('已归档到设置里的已出院');
+    },
+
     async restore(id) {
       const adm = this.admission(id);
       if (!adm) return;
       adm.status = 'admitted';
+      adm.archivedAt = '';
+      adm.dischargeDate = '';
+      if (adm.taskPlans) delete adm.taskPlans.discharge;
       adm.updatedAt = Store.nowISO();
       await Store.put('admissions', adm);
       await this.reload();
@@ -3779,12 +4040,13 @@ a { color: var(--accent); }
         .map(function (pair) {
           return '<option value="' + pair[0] + '"' + (kind === pair[0] ? ' selected' : '') + '>' + pair[1] + '</option>';
         }).join('');
-      const anchorOpts = '<option value="">不锚定（只在总览显示）</option>' + this.admittedList().map((a) => {
+      const anchorOpts = '<option value="">不锚定（只在任务页显示）</option>' + this.admittedList().map((a) => {
         const p = this.patient(a.patientId) || {};
         return '<option value="' + UI.esc(a.id) + '"' + (anchorId === a.id ? ' selected' : '') + '>' +
           UI.esc((a.bed || '') + ' ' + (p.name || '')) + '</option>';
       }).join('');
       const type = f && f.type === 'repeat' ? 'repeat' : 'once';
+      const defaultDue = this.state.page === 'overview' && this.state.overviewDate ? this.state.overviewDate : this.state.today;
       const body = '<form id="free-form">' +
         '<div class="field"><label>常用任务</label><select id="free-kind" name="kind">' + kindOpts + '</select></div>' +
         '<div class="field"><label>标题 *</label><input name="title" value="' + UI.esc(f ? f.title : '') + '" placeholder="如 复查血常规 / 联系家属签字"></div>' +
@@ -3792,10 +4054,10 @@ a { color: var(--accent); }
         '<div class="grid2">' +
         '<div class="field"><label>类型</label><select name="type"' + (kind !== 'custom' ? ' disabled' : '') + '><option value="once"' + (type === 'once' ? ' selected' : '') + '>一次</option><option value="repeat"' + (type === 'repeat' ? ' selected' : '') + '>重复</option></select></div>' +
         '<div class="field"><label>循环天数（重复用）</label><input name="interval" type="number" min="1" inputmode="numeric" value="' + UI.esc(f && f.interval ? f.interval : 2) + '"' + (kind !== 'custom' ? ' disabled' : '') + '></div>' +
-        '<div class="field"><label>计划日期</label><input name="dueDate" type="date" value="' + UI.esc(f ? (f.dueDate || '') : this.state.today) + '"></div>' +
+        '<div class="field"><label>计划日期</label><input name="dueDate" type="date" value="' + UI.esc(f ? (f.dueDate || '') : defaultDue) + '"></div>' +
         '</div>' +
         '<div class="field"><label>备注</label><input name="note" value="' + UI.esc(f ? f.note || '' : '') + '"></div>' +
-        '<p class="small muted" style="margin:10px 0 0">常用任务会进入该患者的任务历史；换药在计划外完成时会刷新下一次换药日期。不锚定患者时只在总览显示。</p>' +
+        '<p class="small muted" style="margin:10px 0 0">常用任务会进入该患者的任务历史；换药在计划外完成时会刷新下一次换药日期。不锚定患者时只在任务页显示。</p>' +
         '</form>';
       const self = this;
       const actions = [
