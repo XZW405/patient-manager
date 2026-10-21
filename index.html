@@ -124,10 +124,12 @@ a { color: var(--accent); }
 .hidden { display: none !important; }
 .warn { color: var(--red); }
 .good { color: var(--green); }
-.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 2px 0 12px; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 2px 0 12px; flex-wrap: wrap; }
 .page-head h1 { margin: 0; font-size: 24px; letter-spacing: -.03em; }
 .page-head .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.page-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .section-gap { height: 12px; }
+.ov-chip.free-only { background: color-mix(in srgb, var(--accent-soft) 55%, var(--card)); }
 
 /* 按钮 */
 .btn {
@@ -149,6 +151,7 @@ a { color: var(--accent); }
   border-radius: 50%; background: var(--accent); border-color: var(--accent);
   color: #fff; font-size: 26px; font-weight: 400; line-height: 1;
 }
+.btn.plus.tiny { width: 32px; min-width: 32px; height: 32px; font-size: 20px; border-radius: 50%; }
 .btn:disabled { opacity: .45; pointer-events: none; }
 .icon-btn { border: 0; background: transparent; color: var(--muted); font-size: 20px; padding: 6px; border-radius: 8px; }
 
@@ -250,32 +253,51 @@ a { color: var(--accent); }
 .patient-table .diag { max-width: 180px; }
 .patient-table .surgery { max-width: 190px; }
 .patient-table .todo-cell { white-space: nowrap; }
-.cards { display: grid; gap: 10px; grid-template-columns: 1fr; }
-@media (min-width: 760px) { .cards { grid-template-columns: 1fr 1fr; } }
+.cards { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+.cards.single { grid-template-columns: 1fr; }
 .patient-card {
   text-align: left; background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 14px;
-  display: flex; flex-direction: column; gap: 6px; width: 100%;
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: 10px 11px;
+  display: flex; flex-direction: column; gap: 4px; width: 100%; min-width: 0; height: 100%;
 }
 .patient-card:active { transform: scale(.995); }
-.pc-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.pc-bed { font-weight: 800; font-size: 16px; }
-.pc-name { font-weight: 700; font-size: 16px; }
+.pc-top { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
+.pc-bed { font-weight: 800; font-size: 15px; }
+.pc-name { font-weight: 700; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pc-status { margin-left: auto; }
-.pc-diag { font-size: 14px; color: var(--text); }
-.pc-surgery { font-size: 12px; color: var(--muted); }
-.pc-bottom { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
-.pc-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.pc-diag { font-size: 12px; color: var(--text); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pc-surgery { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-bottom { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.pc-tags { display: flex; gap: 3px; flex-wrap: wrap; margin-left: auto; }
+.patient-card .teacher-badge { width: 20px; height: 20px; font-size: 10px; }
+.patient-card .todo-badge { font-size: 10px; padding: 2px 6px; gap: 2px; }
+.patient-card .pc-tags .tag { height: 17px; padding: 0 4px; font-size: 9px; }
 
 /* 详情 */
-.back { border: 0; background: transparent; color: var(--accent); font-weight: 650; padding: 4px 0; margin-bottom: 8px; }
-.detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-.detail-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.detail-back-row { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+.back-icon {
+  width: 46px; min-width: 46px; height: 46px; border-radius: 14px;
+  border: 1px solid var(--border); background: var(--card); color: var(--text);
+  box-shadow: var(--shadow); display: inline-flex; align-items: center; justify-content: center;
+  padding: 0;
+}
+.back-icon:active { transform: scale(.97); }
+.detail-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .detail-title h1 { margin: 0; font-size: 24px; letter-spacing: -.03em; }
 .detail-title .bed { font-size: 20px; font-weight: 800; }
 .detail-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.detail-grid { display: grid; gap: 12px; }
-@media (min-width: 900px) { .detail-grid { grid-template-columns: 1fr 1fr; } .detail-grid .span2 { grid-column: 1 / -1; } }
+.detail-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.detail-top > .card { margin-top: 0; }
+.detail-top .card { padding: 12px; min-width: 0; }
+.detail-top .kv { grid-template-columns: 60px minmax(0, 1fr); gap: 5px 7px; font-size: 12px; line-height: 1.4; }
+.detail-top .kv dt { white-space: nowrap; font-size: 11px; }
+.detail-top .kv dd { min-width: 0; overflow-wrap: anywhere; }
+.detail-top .card h2 { font-size: 14px; }
+.detail-top .card h3 { font-size: 12px; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.card-head h2 { margin: 0; }
+.info-card .note-text { max-height: 120px; overflow-y: auto; }
+.todo-card .task-list { min-width: 0; }
 .kv { display: grid; grid-template-columns: 92px 1fr; gap: 6px 10px; font-size: 14px; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; }
@@ -289,11 +311,30 @@ a { color: var(--accent); }
 .task-card .task-name { font-weight: 700; }
 .task-card .task-due { color: var(--muted); font-size: 12px; }
 .task-card .task-actions { margin-left: auto; display: flex; gap: 6px; }
+.task-list { display: grid; gap: 2px; }
+.task-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 7px 0; border-bottom: 1px dashed var(--border); }
+.task-row:last-child { border-bottom: 0; }
+.task-row.overdue .task-rel { color: var(--red); }
+.task-row.upcoming .task-rel { color: var(--amber); }
+.task-main { flex: 1 1 100px; min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
+.task-name { font-weight: 700; font-size: 13px; line-height: 1.35; }
+.task-every { color: var(--faint); font-size: 10px; font-weight: 500; margin-left: 4px; white-space: nowrap; }
+.task-rel { color: var(--accent); font-size: 11px; font-weight: 650; white-space: nowrap; }
+.task-row .task-actions { margin-left: auto; display: flex; align-items: center; gap: 2px; }
+.task-row .icon-btn { padding: 2px 4px; font-size: 14px; }
+.task-row .btn.small { min-height: 28px; padding: 3px 8px; font-size: 12px; border-radius: 8px; }
 .history { display: grid; gap: 6px; }
 .history-item { display: flex; gap: 8px; align-items: baseline; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
 .history-item:last-child { border-bottom: 0; }
 .history-date { color: var(--faint); font-size: 12px; min-width: 44px; }
+.history-main { flex: 1; min-width: 0; }
 .history-note { color: var(--muted); font-size: 12px; }
+.history-edit { margin-left: auto; flex: 0 0 auto; }
+.history-group { border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; margin: 8px 0; }
+.history-group-head { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.detail-footer { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--border); }
+.detail-footer .btn { flex: 1 1 120px; }
+.photo-label { color: var(--muted); font-size: 12px; font-weight: 650; margin-bottom: 6px; }
 
 /* 空状态 */
 .empty { text-align: center; padding: 36px 16px; color: var(--muted); }
@@ -420,7 +461,7 @@ a { color: var(--accent); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.21.2315';</script>
+<script>window.APP_VERSION = 'v2026.10.22.0056';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -442,20 +483,26 @@ a { color: var(--accent); }
   };
 
   const TASK_LABELS = {
-    preop_film: '理胶片',
-    preop_mark: '画标记',
+    preop: '备术',
+    preop_film: '备术',
+    preop_mark: '备术',
     drain: '待拔管',
     dressing: '换药',
     stitch: '拆线'
   };
 
   const TASK_CATEGORY = {
+    preop: 'preop',
     preop_film: 'preop',
     preop_mark: 'preop',
     drain: 'drain',
     dressing: 'dressing',
     stitch: 'stitch'
   };
+
+  // 旧数据里可能同时有理胶片 / 画标记两条；新规则只保留一个「备术」任务。
+  const PREOP_TYPES = ['preop', 'preop_film', 'preop_mark'];
+  const COMMON_TASK_LABELS = { dressing: '换药', stitch: '拆线', preop: '备术', drain: '待拔管' };
 
   const ACTION_LABELS = {
     done: '已完成',
@@ -465,7 +512,7 @@ a { color: var(--accent); }
     nonplanned: '非计划换药'
   };
 
-  const CATEGORY_ORDER = ['overdue', 'preop', 'surgery', 'drain', 'dressing', 'stitch', 'other'];
+  const CATEGORY_ORDER = ['overdue', 'preop', 'surgery', 'drain', 'dressing', 'stitch', 'other', 'free'];
   const CATEGORY_LABELS = {
     overdue: '逾期',
     preop: '备术',
@@ -473,7 +520,8 @@ a { color: var(--accent); }
     drain: '拔管',
     dressing: '换药',
     stitch: '拆线',
-    other: '其他待办'
+    other: '其他待办',
+    free: '自由待办'
   };
 
   // ---------- 日期 ----------
@@ -512,6 +560,44 @@ a { color: var(--accent); }
   }
 
   function validDate(ymd) { return !!parseYMD(ymd); }
+
+  // ISO 时间戳 -> 本地 YYYY-MM-DD。补录基线按用户录入当天计算。
+  function localDateFromISO(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  function admissionStartDate(admission) {
+    if (!admission) return '';
+    if (validDate(admission.taskStartDate)) return admission.taskStartDate;
+    return localDateFromISO(admission.createdAt);
+  }
+
+  function relativeDayLabel(due, today) {
+    if (!due) return '未定';
+    const n = diffDays(due, today);
+    if (n == null) return '未定';
+    if (n === 0) return '今天';
+    if (n > 0) return n + ' 天后';
+    return '逾期 ' + (-n) + ' 天';
+  }
+
+  function cnNumber(n) {
+    const num = Number(n);
+    if (!num || num < 1) return '';
+    if (num > 99) return String(num);
+    const d = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+    if (num < 10) return d[num];
+    if (num === 10) return '十';
+    if (num < 20) return '十' + d[num % 10];
+    return d[Math.floor(num / 10)] + '十' + (num % 10 ? d[num % 10] : '');
+  }
+
+  function dressingLabel(n) {
+    return '换药' + cnNumber(n);
+  }
 
   // ---------- 事件 ----------
   function eventCmp(a, b) {
@@ -564,13 +650,35 @@ a { color: var(--accent); }
     return 'overdue';
   }
 
+  function taskPlan(admission, type) {
+    return admission && admission.taskPlans && admission.taskPlans[type] ? admission.taskPlans[type] : null;
+  }
+
+  function planHasLaterEvent(plan, evs) {
+    if (!plan || !plan.setAt) return false;
+    return (evs || []).some(function (e) {
+      return (e.action === 'done' || e.action === 'senior' || e.action === 'nonplanned') &&
+        String(e.createdAt || '') > String(plan.setAt || '');
+    });
+  }
+
+  function planDue(plan, evs, fallback) {
+    if (plan && validDate(plan.dueDate) && !planHasLaterEvent(plan, evs)) return plan.dueDate;
+    return fallback;
+  }
+
+  function planInterval(plan, fallback) {
+    const n = plan && Number(plan.interval);
+    return n && n > 0 ? n : fallback;
+  }
+
   function overdueDaysFor(due, today, status) {
     if (status !== 'overdue' || !due) return 0;
     const n = diffDays(today, due);
     return n && n > 0 ? n : 0;
   }
 
-  function makeTask(admission, type, label, category, dueDate, status, priority, actions, extra, today) {
+  function makeTask(admission, type, label, category, dueDate, status, actions, extra, today) {
     const key = admission.id + ':' + type;
     return Object.assign({
       key: key,
@@ -582,23 +690,25 @@ a { color: var(--accent); }
       dueDate: dueDate || '',
       status: status,
       overdueDays: overdueDaysFor(dueDate, today, status),
-      priority: priority,
+      relative: relativeDayLabel(dueDate, today),
       actions: actions
     }, extra || {});
   }
 
-  function completion(admission, taskType, label, ev) {
-    return {
+  function completion(admission, taskType, label, ev, extra) {
+    return Object.assign({
       key: admission.id + ':done:' + taskType + ':' + (ev.id || ev.date + ev.action),
       admissionId: admission.id,
       patientId: admission.patientId,
+      eventId: ev.id || '',
       type: taskType,
+      taskType: taskType,
       label: label,
       date: ev.date,
       action: ev.action,
       bySenior: ev.action === 'senior',
       note: ev.note || ''
-    };
+    }, extra || {});
   }
 
   function freeTaskType(id) { return 'free:' + id; }
@@ -606,18 +716,28 @@ a { color: var(--accent); }
   function historyFor(evs, freeTodos) {
     const freeMap = {};
     (freeTodos || []).forEach(function (f) { freeMap[freeTaskType(f.id)] = f.title || '待办'; });
-    return sortEvents(evs).reverse().map(function (e) {
+    let dressingNo = 0;
+    return sortEvents(evs).map(function (e) {
+      let label = TASK_LABELS[e.taskType] || freeMap[e.taskType] || '待办';
+      if (e.taskType === 'dressing' &&
+        (e.action === 'done' || e.action === 'senior' || e.action === 'nonplanned')) {
+        dressingNo += 1;
+        label = dressingLabel(dressingNo);
+      }
       return {
         id: e.id,
+        eventId: e.id,
         date: e.date,
         type: e.taskType,
-        label: TASK_LABELS[e.taskType] || freeMap[e.taskType] || '待办',
+        taskType: e.taskType,
+        freeTodoId: e.sourceFreeTodoId || '',
+        label: label,
         action: e.action,
         actionLabel: ACTION_LABELS[e.action] || e.action,
         bySenior: e.action === 'senior',
         note: e.note || ''
       };
-    });
+    }).reverse();
   }
 
   // ---------- 单次住院排期 ----------
@@ -629,7 +749,8 @@ a { color: var(--accent); }
 
     const empty = {
       tasks: [], current: [], completedToday: [], history: [],
-      stitchDue: '', drainDate: '', nextDressingDate: '', stitchEnded: false
+      stitchDue: '', drainDate: '', nextDressingDate: '', stitchEnded: false,
+      baselineDate: '', backfilled: false, skippedBeforeStart: 0
     };
     if (!admission || admission.deletedAt || admission.status !== 'admitted') return empty;
 
@@ -638,42 +759,51 @@ a { color: var(--accent); }
     });
     const surgeryDate = admission.surgeryDate || '';
     const stitchDue = surgeryDate ? addDays(surgeryDate, s.stitchOffset) : '';
+    const start = admissionStartDate(admission);
+    let skippedBeforeStart = 0;
+    const beforeStart = function (due) {
+      return !!(start && due && due < start);
+    };
     let drainDate = '';
     let nextDressingDate = '';
     let stitchEnded = false;
 
-    // 术前：D-1
+    // 术前：D-1。旧数据的理胶片 / 画标记合并成一个「备术」。
     if (surgeryDate) {
       const preopDue = addDays(surgeryDate, -1);
-      [['preop_film', '理胶片'], ['preop_mark', '画标记']].forEach(function (pair) {
-        const type = pair[0];
-        const label = pair[1];
-        const evs = allEvents.filter(function (e) { return e.taskType === type; });
-        const term = terminalEvent(evs);
-        if (term) {
-          const status = term.action === 'not_needed' ? 'not_needed' : 'done';
-          tasks.push(makeTask(admission, type, label, 'preop', preopDue, status, 100,
-            ['done', 'defer', 'senior', 'not_needed'], {
-              doneDate: term.date,
-              bySenior: term.action === 'senior'
-            }, t));
-          if ((term.action === 'done' || term.action === 'senior') && term.date === t) {
-            completedToday.push(completion(admission, type, label, term));
-          }
-          return;
-        }
-        const due = applyDefer(preopDue, evs);
-        const status = dueStatus(due, t);
-        const preopLate = surgeryDate <= t && (status === 'pending' || status === 'overdue');
-        tasks.push(makeTask(admission, type, label, 'preop', due, status, 100,
+      const evs = allEvents.filter(function (e) { return PREOP_TYPES.indexOf(e.taskType) >= 0; });
+      const term = terminalEvent(evs);
+      if (term) {
+        const status = term.action === 'not_needed' ? 'not_needed' : 'done';
+        tasks.push(makeTask(admission, 'preop', '备术', 'preop', preopDue, status,
           ['done', 'defer', 'senior', 'not_needed'], {
-            preopLate: preopLate,
-            flag: preopLate ? '术前未完成' : ''
+            doneDate: term.date,
+            bySenior: term.action === 'senior',
+            eventId: term.id
           }, t));
-      });
+        if ((term.action === 'done' || term.action === 'senior') && term.date === t) {
+          completedToday.push(completion(admission, 'preop', '备术', term));
+        }
+      } else {
+        const plan = taskPlan(admission, 'preop');
+        const manual = !!(plan && validDate(plan.dueDate) && !planHasLaterEvent(plan, evs));
+        let due = planDue(plan, evs, preopDue);
+        due = applyDefer(due, evs);
+        if (beforeStart(due) && !manual) {
+          skippedBeforeStart += 1;
+        } else {
+          const status = dueStatus(due, t);
+          const preopLate = surgeryDate <= t && (status === 'pending' || status === 'overdue');
+          tasks.push(makeTask(admission, 'preop', '备术', 'preop', due, status,
+            ['done', 'defer', 'senior', 'not_needed'], {
+              preopLate: preopLate,
+              flag: preopLate ? '术前未完成' : ''
+            }, t));
+        }
+      }
     }
 
-    // 拔管：术后 D1；所有手术都有引流管
+    // 拔管：术后 D1；所有手术都有引流管。
     if (surgeryDate) {
       const drainDue = addDays(surgeryDate, s.drainOffset);
       const evs = allEvents.filter(function (e) { return e.taskType === 'drain'; });
@@ -681,44 +811,63 @@ a { color: var(--accent); }
       if (term) {
         if (term.action === 'done' || term.action === 'senior') drainDate = term.date;
         const status = term.action === 'not_needed' ? 'not_needed' : 'done';
-        tasks.push(makeTask(admission, 'drain', '待拔管', 'drain', drainDue, status, 90,
+        tasks.push(makeTask(admission, 'drain', '待拔管', 'drain', drainDue, status,
           ['done', 'defer', 'senior'], {
             doneDate: term.date,
-            bySenior: term.action === 'senior'
+            bySenior: term.action === 'senior',
+            eventId: term.id
           }, t));
         if ((term.action === 'done' || term.action === 'senior') && term.date === t) {
           completedToday.push(completion(admission, 'drain', '待拔管', term));
         }
       } else {
-        const due = applyDefer(drainDue, evs);
-        tasks.push(makeTask(admission, 'drain', '待拔管', 'drain', due, dueStatus(due, t), 90,
-          ['done', 'defer', 'senior'], {}, t));
+        const plan = taskPlan(admission, 'drain');
+        const manual = !!(plan && validDate(plan.dueDate) && !planHasLaterEvent(plan, evs));
+        let due = planDue(plan, evs, drainDue);
+        due = applyDefer(due, evs);
+        if (beforeStart(due) && !manual) {
+          // 补录：录入前应已拔管，按默认日期作为后续换药的锚点。
+          skippedBeforeStart += 1;
+          drainDate = due;
+        } else {
+          tasks.push(makeTask(admission, 'drain', '待拔管', 'drain', due, dueStatus(due, t),
+            ['done', 'defer', 'senior'], {}, t));
+        }
       }
     }
 
-    // 拆线：术后 D14
+    // 拆线：术后 D14。
     if (surgeryDate && stitchDue) {
       const evs = allEvents.filter(function (e) { return e.taskType === 'stitch'; });
       const term = terminalEvent(evs);
       if (term) {
         stitchEnded = true;
         const status = term.action === 'not_needed' ? 'not_needed' : 'done';
-        tasks.push(makeTask(admission, 'stitch', '拆线', 'stitch', stitchDue, status, 80,
+        tasks.push(makeTask(admission, 'stitch', '拆线', 'stitch', stitchDue, status,
           ['done', 'defer', 'senior', 'not_needed'], {
             doneDate: term.date,
-            bySenior: term.action === 'senior'
+            bySenior: term.action === 'senior',
+            eventId: term.id
           }, t));
         if ((term.action === 'done' || term.action === 'senior') && term.date === t) {
           completedToday.push(completion(admission, 'stitch', '拆线', term));
         }
       } else {
-        const due = applyDefer(stitchDue, evs);
-        tasks.push(makeTask(admission, 'stitch', '拆线', 'stitch', due, dueStatus(due, t), 80,
-          ['done', 'defer', 'senior', 'not_needed'], {}, t));
+        const plan = taskPlan(admission, 'stitch');
+        const manual = !!(plan && validDate(plan.dueDate) && !planHasLaterEvent(plan, evs));
+        let due = planDue(plan, evs, stitchDue);
+        due = applyDefer(due, evs);
+        if (beforeStart(due) && !manual) {
+          skippedBeforeStart += 1;
+          stitchEnded = true;
+        } else {
+          tasks.push(makeTask(admission, 'stitch', '拆线', 'stitch', due, dueStatus(due, t),
+            ['done', 'defer', 'senior', 'not_needed'], {}, t));
+        }
       }
     }
 
-    // 换药：拔管完成日 + 首次间隔；每次实际操作 + 间隔；与拆线撞日只留拆线
+    // 换药：拔管完成日 + 首次间隔；每次实际操作 + 间隔；与拆线撞日只留拆线。
     if (drainDate && stitchDue && !stitchEnded) {
       const firstDue = addDays(drainDate, s.firstDressingInterval);
       if (firstDue && firstDue < stitchDue) {
@@ -727,20 +876,42 @@ a { color: var(--accent); }
         const anchor = latestAction(evs, ['done', 'senior', 'nonplanned']);
         const stopped = term && term.action === 'not_needed' &&
           (!anchor || eventCmp(term, anchor) > 0);
+        const plan = taskPlan(admission, 'dressing');
+        const interval = planInterval(plan, s.dressingInterval);
 
         if (!stopped) {
-          const baseDue = anchor ? addDays(anchor.date, s.dressingInterval) : firstDue;
-          if (baseDue && baseDue < stitchDue) {
-            const due = applyDefer(baseDue, evs);
-            if (due && due < stitchDue) {
-              nextDressingDate = due;
-              tasks.push(makeTask(admission, 'dressing', '换药', 'dressing', due,
-                dueStatus(due, t), 50,
-                ['done', 'defer', 'senior', 'not_needed'], {
-                  firstDue: firstDue,
-                  anchorDate: anchor ? anchor.date : ''
-                }, t));
+          let baseDue = anchor ? addDays(anchor.date, interval) : firstDue;
+          let stepped = false;
+          // 录入前已经到期的换药，按默认间隔一路推到现在 / 未来。
+          let guard = 0;
+          while (baseDue && beforeStart(baseDue) && guard < 500) {
+            skippedBeforeStart += 1;
+            stepped = true;
+            baseDue = addDays(baseDue, interval);
+            guard += 1;
+          }
+          // 患者单独设置的“下一次日期”优先；设置之后已有操作则按操作重新算。
+          const manualDue = !!(plan && validDate(plan.dueDate) && !planHasLaterEvent(plan, evs));
+          if (manualDue) baseDue = plan.dueDate;
+          let due = baseDue ? applyDefer(baseDue, evs) : '';
+          if (due && beforeStart(due) && !manualDue) {
+            while (due && beforeStart(due) && guard < 500) {
+              skippedBeforeStart += 1;
+              stepped = true;
+              due = addDays(due, interval);
+              guard += 1;
             }
+          }
+          if (due && due < stitchDue) {
+            nextDressingDate = due;
+            tasks.push(makeTask(admission, 'dressing', '换药', 'dressing', due, dueStatus(due, t),
+              ['done', 'defer', 'senior', 'not_needed'], {
+                firstDue: firstDue,
+                anchorDate: anchor ? anchor.date : '',
+                interval: interval,
+                planInterval: plan && plan.interval ? Number(plan.interval) : '',
+                stepped: stepped
+              }, t));
           }
         }
 
@@ -753,29 +924,32 @@ a { color: var(--accent); }
       }
     }
 
-    // 自由待办
+    // 自由待办：只算锚定在本住院的；未锚定的只在总览出现。
     (freeTodos || []).forEach(function (f) {
-      if (!f || f.deletedAt || f.admissionId !== admission.id) return;
+      if (!f || f.deletedAt || f.admissionId !== admission.id || f.doneAt) return;
       const type = freeTaskType(f.id);
       const evs = allEvents.filter(function (e) { return e.taskType === type; });
       const term = terminalEvent(evs);
-      const priority = f.priority === 'important' ? 70 : 40;
-      const label = f.title || '待办';
+      const label = f.title || COMMON_TASK_LABELS[f.kind] || '待办';
       const actions = ['done', 'defer', 'senior', 'not_needed'];
+      const plan = taskPlan(admission, type);
 
       if (f.type === 'once') {
         if (term) {
           const status = term.action === 'not_needed' ? 'not_needed' : 'done';
-          tasks.push(makeTask(admission, type, label, 'other', f.dueDate || '', status, priority,
-            actions, { freeTodoId: f.id, doneDate: term.date, bySenior: term.action === 'senior' }, t));
+          tasks.push(makeTask(admission, type, label, 'other', f.dueDate || '', status, actions, {
+            freeTodoId: f.id, kind: f.kind || 'custom', doneDate: term.date,
+            bySenior: term.action === 'senior', eventId: term.id
+          }, t));
           if ((term.action === 'done' || term.action === 'senior') && term.date === t) {
             completedToday.push(completion(admission, type, label, term));
           }
           return;
         }
-        const due = applyDefer(f.dueDate || '', evs);
-        tasks.push(makeTask(admission, type, label, 'other', due, dueStatus(due, t), priority,
-          actions, { freeTodoId: f.id }, t));
+        const due = applyDefer(planDue(plan, evs, f.dueDate || ''), evs);
+        tasks.push(makeTask(admission, type, label, 'other', due, dueStatus(due, t), actions, {
+          freeTodoId: f.id, kind: f.kind || 'custom'
+        }, t));
         return;
       }
 
@@ -784,21 +958,27 @@ a { color: var(--accent); }
       const stopped = term && term.action === 'not_needed' &&
         (!anchor || eventCmp(term, anchor) > 0);
       if (stopped) {
-        tasks.push(makeTask(admission, type, label, 'other', '', 'not_needed', priority,
-          actions, { freeTodoId: f.id }, t));
+        tasks.push(makeTask(admission, type, label, 'other', '', 'not_needed', actions, {
+          freeTodoId: f.id, kind: f.kind || 'custom'
+        }, t));
         return;
       }
-      const base = anchor ? addDays(anchor.date, Number(f.interval || 2)) : (f.dueDate || '');
-      const due = base ? applyDefer(base, evs) : '';
-      tasks.push(makeTask(admission, type, label, 'other', due, dueStatus(due, t), priority,
-        actions, { freeTodoId: f.id, anchorDate: anchor ? anchor.date : '' }, t));
+      const interval = planInterval(plan, Number(f.interval || 2));
+      const base = anchor ? addDays(anchor.date, interval) : (f.dueDate || '');
+      const due = base ? applyDefer(planDue(plan, evs, base), evs) : '';
+      tasks.push(makeTask(admission, type, label, 'other', due, dueStatus(due, t), actions, {
+        freeTodoId: f.id,
+        kind: f.kind || 'custom',
+        anchorDate: anchor ? anchor.date : '',
+        interval: interval
+      }, t));
       if (anchor && anchor.date === t) {
         completedToday.push(completion(admission, type, label, anchor));
       }
     });
 
+    // 不设优先级：最近到期的排最上面；没有日期的排最后。
     tasks.sort(function (a, b) {
-      if (b.priority !== a.priority) return b.priority - a.priority;
       const da = a.dueDate || '9999-12-31';
       const db = b.dueDate || '9999-12-31';
       if (da !== db) return da < db ? -1 : 1;
@@ -817,7 +997,10 @@ a { color: var(--accent); }
       stitchDue: stitchDue,
       drainDate: drainDate,
       nextDressingDate: nextDressingDate,
-      stitchEnded: stitchEnded
+      stitchEnded: stitchEnded,
+      baselineDate: start,
+      backfilled: skippedBeforeStart > 0,
+      skippedBeforeStart: skippedBeforeStart
     };
   }
 
@@ -853,8 +1036,9 @@ a { color: var(--accent); }
   }
 
   function addRow(group, admission, patient, task, completed, fallbackLabel) {
+    const freeId = task && task.freeTodoId ? task.freeTodoId : '';
     let row = group.find(function (r) {
-      return r.admissionId === admission.id && !!r.completed === !!completed;
+      return r.admissionId === admission.id && r.freeTodoId === freeId && !!r.completed === !!completed;
     });
     if (!row) {
       row = {
@@ -863,12 +1047,16 @@ a { color: var(--accent); }
         bed: admission.bed || '',
         name: patient ? patient.name || '' : '',
         completed: !!completed,
+        freeTodoId: freeId,
         labels: [],
         tasks: [],
-        overdueDays: 0
+        overdueDays: 0,
+        earliestDue: ''
       };
       group.push(row);
     }
+    const due = task ? (task.dueDate || task.date || '') : '';
+    if (due && (!row.earliestDue || due < row.earliestDue)) row.earliestDue = due;
     if (task) {
       row.tasks.push(task);
       if (task.label) row.labels.push(task.label);
@@ -878,8 +1066,28 @@ a { color: var(--accent); }
     }
   }
 
+  function addFreeRow(group, f, t, due, completed) {
+    group.push({
+      admissionId: '',
+      patientId: f.patientId || '',
+      bed: '',
+      name: '自由待办',
+      completed: !!completed,
+      freeTodoId: f.id,
+      labels: [f.title || '待办'],
+      tasks: [],
+      overdueDays: !completed && due < t ? diffDays(t, due) : 0,
+      earliestDue: due || ''
+    });
+  }
+
   function sortRows(group) {
-    group.sort(function (a, b) { return compareBed(a.bed, b.bed); });
+    group.sort(function (a, b) {
+      const da = a.earliestDue || '9999-12-31';
+      const db = b.earliestDue || '9999-12-31';
+      if (da !== db) return da < db ? -1 : 1;
+      return compareBed(a.bed, b.bed);
+    });
     return group;
   }
 
@@ -916,7 +1124,7 @@ a { color: var(--accent); }
           addRow(todayGroups[task.category] || todayGroups.other, a, patient, task, false, task.label);
           return;
         }
-        if (task.status === 'pending' && task.dueDate === tomorrow) {
+        if (task.status === 'upcoming' && task.dueDate === tomorrow) {
           addRow(tomorrowGroups[task.category] || tomorrowGroups.other, a, patient, task, false, task.label);
         }
       });
@@ -928,6 +1136,33 @@ a { color: var(--accent); }
 
       if (a.surgeryDate === t) addRow(todayGroups.surgery, a, patient, null, false, '手术');
       if (a.surgeryDate === tomorrow) addRow(tomorrowGroups.surgery, a, patient, null, false, '手术');
+    });
+
+    // 没有锚定患者的自由待办：只在总览出现，不进任何患者卡片。
+    (freeTodos || []).forEach(function (f) {
+      if (!f || f.deletedAt || f.admissionId) return;
+      let due = f.dueDate || t;
+      if (f.doneAt) {
+        const doneDate = localDateFromISO(f.doneAt);
+        if (f.type !== 'repeat') {
+          if (doneDate === t) addFreeRow(todayGroups.free, f, t, due, true);
+          return;
+        }
+        if (doneDate && (!f.dueDate || f.dueDate <= doneDate)) {
+          due = addDays(doneDate, Number(f.interval || 2));
+        }
+      }
+      if (due < t) {
+        overdue += 1;
+        unfinishedToday += 1;
+        addFreeRow(todayGroups.free, f, t, due, false);
+      } else if (due === t) {
+        todayTodo += 1;
+        unfinishedToday += 1;
+        addFreeRow(todayGroups.free, f, t, due, false);
+      } else if (due === tomorrow) {
+        addFreeRow(tomorrowGroups.free, f, t, due, false);
+      }
     });
 
     CATEGORY_ORDER.forEach(function (k) {
@@ -1148,6 +1383,8 @@ a { color: var(--accent); }
     DEFAULTS: DEFAULTS,
     TASK_LABELS: TASK_LABELS,
     TASK_CATEGORY: TASK_CATEGORY,
+    PREOP_TYPES: PREOP_TYPES,
+    COMMON_TASK_LABELS: COMMON_TASK_LABELS,
     ACTION_LABELS: ACTION_LABELS,
     CATEGORY_ORDER: CATEGORY_ORDER,
     CATEGORY_LABELS: CATEGORY_LABELS,
@@ -1157,6 +1394,10 @@ a { color: var(--accent); }
     diffDays: diffDays,
     todayYMD: todayYMD,
     validDate: validDate,
+    localDateFromISO: localDateFromISO,
+    admissionStartDate: admissionStartDate,
+    relativeDayLabel: relativeDayLabel,
+    cnNumber: cnNumber,
     sortEvents: sortEvents,
     latestEvent: latestEvent,
     terminalEvent: terminalEvent,
@@ -1971,6 +2212,34 @@ a { color: var(--accent); }
     return '<span class="todo-badge ' + cls + '">' + esc(text) + '</span>';
   }
 
+  function todayBadge(task) {
+    const red = task.status === 'overdue' ? ' red' : '';
+    const text = task.status === 'overdue'
+      ? '逾期' + task.overdueDays + '天 · ' + task.label
+      : task.label;
+    return '<span class="todo-badge' + red + '">' + esc(text) + '</span>';
+  }
+
+  function todayBadges(tasks) {
+    const list = (tasks || []).filter(function (t) { return t.status === 'pending' || t.status === 'overdue'; });
+    return list.length ? list.map(todayBadge).join('') : '<span class="small faint">今日无任务</span>';
+  }
+
+  function taskRow(app, adm, t) {
+    const canAct = t.status !== 'done' && t.status !== 'not_needed';
+    const rel = t.relative || root.Engine.relativeDayLabel(t.dueDate, app.state.today);
+    const interval = t.interval ? '<span class="task-every">每 ' + esc(t.interval) + ' 天</span>' : '';
+    return '<div class="task-row ' + esc(t.status) + '">' +
+      '<button class="task-main" data-act="task-plan" data-admission="' + esc(adm.id) + '" data-type="' + esc(t.type) + '" title="点这里改下一次日期 / 循环天数">' +
+      '<span class="task-name">' + esc(t.label) + interval + '</span>' +
+      '<span class="task-rel">' + esc(rel) + '</span>' +
+      '</button>' +
+      '<div class="task-actions">' +
+      (t.freeTodoId ? '<button class="icon-btn" data-act="free-todo" data-id="' + esc(t.freeTodoId) + '" title="编辑这条待办">✎</button>' : '') +
+      (canAct ? '<button class="btn small soft" data-act="tasks" data-admission="' + esc(adm.id) + '">处理</button>' : '') +
+      '</div></div>';
+  }
+
   function kv(rows) {
     return '<dl class="kv">' + rows.map(function (r) {
       return '<dt>' + esc(r[0]) + '</dt><dd>' + (r[1] || '—') + '</dd>';
@@ -2040,28 +2309,37 @@ a { color: var(--accent); }
     const tomorrowDate = root.Engine.addDays(app.state.today, 1);
 
     let body = '';
-    order.forEach(function (cat) {
-      if (day === 'tomorrow' && cat === 'overdue') return;
+    const cats = order.filter(function (cat) {
+      if (day === 'tomorrow' && cat === 'overdue') return false;
+      return (groups[cat] || []).length > 0;
+    }).sort(function (a, b) {
+      const ea = (groups[a] || []).reduce(function (m, r) { const d = r.earliestDue || '9999-12-31'; return d < m ? d : m; }, '9999-12-31');
+      const eb = (groups[b] || []).reduce(function (m, r) { const d = r.earliestDue || '9999-12-31'; return d < m ? d : m; }, '9999-12-31');
+      return ea < eb ? -1 : (ea > eb ? 1 : 0);
+    });
+    cats.forEach(function (cat) {
       const rows = groups[cat] || [];
-      if (!rows.length) return;
       const openCount = rows.filter(function (r) { return !r.completed; }).length;
       const doneCount = rows.length - openCount;
       const chips = rows.map(function (r) {
         const taskLabels = (r.labels || []).join(' / ');
-        const action = r.tasks && r.tasks.length ? 'tasks' : 'detail';
-        return '<button class="ov-chip ' + (r.completed ? 'completed' : '') + ' ' + (cat === 'overdue' ? 'overdue' : '') + '" ' +
-          'data-act="' + action + '" ' +
-          (action === 'tasks' ? 'data-admission="' + esc(r.admissionId) + '"' : 'data-id="' + esc(r.admissionId) + '"') + '>' +
+        const isFree = !r.admissionId;
+        const action = isFree ? 'free-todo' : (r.completed ? 'history' : (r.tasks && r.tasks.length ? 'tasks' : 'detail'));
+        const attrs = isFree
+          ? 'data-id="' + esc(r.freeTodoId) + '"'
+          : (action === 'tasks' ? 'data-admission="' + esc(r.admissionId) + '"' : 'data-id="' + esc(r.admissionId) + '"');
+        return '<button class="ov-chip ' + (r.completed ? 'completed' : '') + ' ' + (cat === 'overdue' ? 'overdue' : '') + ' ' + (isFree ? 'free-only' : '') + '" ' +
+          'data-act="' + action + '" ' + attrs + '>' +
           (r.completed ? '<span class="good">✓</span>' : '') +
-          '<span class="bed">' + esc(r.bed) + '</span>' +
-          '<span class="pname">' + esc(r.name) + '</span>' +
+          (r.bed ? '<span class="bed">' + esc(r.bed) + '</span>' : '') +
+          (isFree ? '' : '<span class="pname">' + esc(r.name) + '</span>') +
           '<span class="task">' + esc(taskLabels || labels[cat]) + '</span>' +
           (r.overdueDays ? '<span class="days">逾期' + r.overdueDays + '天</span>' : '') +
           '</button>';
       }).join('');
       body += '<section class="ov-group ' + cat + '">' +
         '<div class="ov-title"><span>' + labels[cat] + '</span>' +
-        '<span class="count">' + (openCount ? openCount + ' 人待办' : '') + (doneCount ? (openCount ? ' · ' : '') + doneCount + ' 已完成' : '') + '</span></div>' +
+        '<span class="count">' + (openCount ? openCount + (cat === 'free' ? ' 项' : ' 人') + '待办' : '') + (doneCount ? (openCount ? ' · ' : '') + doneCount + (cat === 'free' ? ' 项' : ' 人') + '已完成' : '') + '</span></div>' +
         '<div class="ov-chips">' + chips + '</div></section>';
     });
 
@@ -2079,8 +2357,12 @@ a { color: var(--accent); }
       (day === 'tomorrow' ? '明日 ' + root.UI.fmtDate(tomorrowDate) + ' ' + root.UI.weekday(tomorrowDate)
         : '今日 ' + root.UI.fmtDate(app.state.today) + ' ' + root.UI.weekday(app.state.today)) +
       ' · 在院 ' + ov.stats.inHospital + ' 人</div></div>' +
+      '<div class="page-actions">' +
       '<div class="seg"><button class="' + (day === 'today' ? 'active' : '') + '" data-act="ov-day" data-value="today">今日</button>' +
-      '<button class="' + (day === 'tomorrow' ? 'active' : '') + '" data-act="ov-day" data-value="tomorrow">明日</button></div></div>' +
+      '<button class="' + (day === 'tomorrow' ? 'active' : '') + '" data-act="ov-day" data-value="tomorrow">明日</button></div>' +
+      '<button class="btn small ghost" data-act="history">历史</button>' +
+      '<button class="btn plus" data-act="free-todo" aria-label="加自由待办" title="加自由待办">+</button>' +
+      '</div></div>' +
       '<div class="statline">' +
       '<span class="stat"><b>' + ov.stats.inHospital + '</b>在院</span>' +
       '<span class="stat"><b>' + ov.stats.todayTodo + '</b>今日待办</span>' +
@@ -2181,14 +2463,13 @@ a { color: var(--accent); }
         if (cf.admissionDate && it.adm.admissionDate) bits.push('入院 ' + root.UI.fmtDate(it.adm.admissionDate));
         const meta = bits.length ? '<div class="pc-surgery">' + esc(bits.join(' · ')) + '</div>' : '';
         return '<button class="patient-card" data-act="detail" data-id="' + esc(it.adm.id) + '">' +
-          '<div class="pc-top">' + tb +
-          '<span class="pc-bed">' + esc(it.adm.bed) + '</span>' +
-          '<span class="pc-name">' + esc(it.patient.name) + '</span>' +
-          '<span class="pc-status">' + root.UI.statusBadge(it.adm.status) + '</span></div>' +
+          '<div class="pc-top">' +
+          '<span class="pc-bed">' + esc(it.adm.bed) + '</span>' + tb +
+          '<span class="pc-name">' + esc(it.patient.name) + '</span></div>' +
           '<div class="pc-diag">' + esc(it.adm.diagnosis || '未填主诊断') + '</div>' +
           '<div class="pc-surgery">' + esc(surgeryLine(app, it.adm)) + '</div>' +
           meta +
-          '<div class="pc-bottom">' + todoBadge(it.task) +
+          '<div class="pc-bottom">' + todayBadges(it.todayTasks) +
           (tg ? '<span class="pc-tags">' + tg + '</span>' : '') + '</div>' +
           '</button>';
       }).join('') + '</div>';
@@ -2211,7 +2492,7 @@ a { color: var(--accent); }
     if (!list.length) {
       body = '<div class="empty"><h3>没有待入院草稿</h3><p>值班当天点右上角「+ 新入院」；复核后标记老师、收进组。</p></div>';
     } else {
-      body = '<div class="cards">' + list.map(function (it) {
+      body = '<div class="cards single">' + list.map(function (it) {
         return '<div class="patient-card" style="cursor:default">' +
           '<div class="pc-top"><span class="pc-bed">' + esc(it.adm.bed || '未填床号') + '</span>' +
           '<span class="pc-name">' + esc(it.patient.name || '未填姓名') + '</span>' +
@@ -2242,59 +2523,41 @@ a { color: var(--accent); }
     const ligament = function (v) {
       return { normal: '正常', lax: '松弛', not_examined: '未查' }[v] || '—';
     };
-    const historyRows = (adm.bedHistory || []).map(function (h) {
+    const bedHistory = (adm.bedHistory || []).map(function (h) {
       return '<div class="history-item"><span class="history-date">' + esc(root.UI.fmtDate(h.date)) + '</span><span>' + esc(h.bed) + '</span><span class="history-note">' + esc(h.note || '') + '</span></div>';
     }).join('');
 
-    const tasks = ctx.tasks.map(function (t) {
-      const canAct = t.status === 'pending' || t.status === 'overdue';
-      const when = t.status === 'overdue' ? '逾期 ' + t.overdueDays + ' 天' : (t.status === 'pending' ? '今日' : '预计');
-      return '<div class="task-card ' + t.status + '">' +
-        '<div><div class="task-name">' + esc(t.label) + '</div>' +
-        '<div class="task-due">' + esc(when) + (t.dueDate ? ' · ' + root.UI.fmtDate(t.dueDate) : '') + '</div></div>' +
-        '<div class="task-actions">' + (canAct
-          ? '<button class="btn small soft" data-act="tasks" data-admission="' + esc(adm.id) + '">处理</button>'
-          : '<span class="small faint">未到时间</span>') + '</div></div>';
-    }).join('') || '<div class="faint small">暂无待办</div>';
+    const taskRows = ctx.tasks.map(function (t) { return taskRow(app, adm, t); }).join('') ||
+      '<div class="faint small">暂无待办；点右上角「+」加一条。</div>';
 
-    const freeTodos = app.freeTodosFor(adm.id);
-    const freeHtml = freeTodos.map(function (f) {
-      const t = res.tasks.find(function (x) { return x.type === 'free:' + f.id; });
-      return '<div class="task-card"><div><div class="task-name">' + esc(f.title) + '</div>' +
-        '<div class="task-due">' + (f.type === 'repeat' ? '每 ' + (f.interval || 2) + ' 天' : '一次') +
-        (f.dueDate ? ' · ' + root.UI.fmtDate(f.dueDate) : '') +
-        (f.priority === 'important' ? ' · 重要' : '') +
-        (t ? ' · ' + esc(dayText(app, t)) : '') + '</div></div>' +
-        '<div class="task-actions"><button class="btn small" data-act="free-todo" data-id="' + esc(f.id) + '">编辑</button>' +
-        (t ? '<button class="btn small soft" data-act="tasks" data-admission="' + esc(adm.id) + '">处理</button>' : '') +
-        '</div></div>';
-    }).join('') || '<div class="faint small">暂无自由待办</div>';
-
-    const history = res.history.slice(0, 60).map(function (h) {
-      return '<div class="history-item"><span class="history-date">' + esc(root.UI.fmtDate(h.date)) + '</span>' +
-        '<span><b>' + esc(h.label) + '</b> · ' + esc(h.actionLabel) + (h.bySenior ? '（上级）' : '') + '</span>' +
-        (h.note ? '<span class="history-note">' + esc(h.note) + '</span>' : '') + '</div>';
+    const history = res.history.slice(0, 80).map(function (h) {
+      return '<div class="history-item">' +
+        '<span class="history-date">' + esc(root.UI.fmtDate(h.date)) + '</span>' +
+        '<span class="history-main"><b>' + esc(h.label) + '</b> · ' + esc(h.actionLabel) + (h.bySenior ? '（上级）' : '') + '</span>' +
+        (h.note ? '<span class="history-note">' + esc(h.note) + '</span>' : '') +
+        '<button class="btn small ghost history-edit" data-act="edit-event" data-event="' + esc(h.eventId || h.id) + '">编辑</button>' +
+        '</div>';
     }).join('') || '<div class="faint small">暂无记录</div>';
 
     const patientPhotos = app.attachments('patient', p.id);
     const admissionPhotos = app.attachments('admission', adm.id);
 
-    return '<button class="back" data-nav="list">← 返回</button>' +
-      '<div class="detail-head"><div class="detail-title">' +
-      '<span class="bed">' + esc(adm.bed) + '</span><h1>' + esc(p.name) + '</h1>' +
-      root.UI.statusBadge(adm.status) + teacherBadge(app, adm) +
-      '<span class="pc-tags">' + tagsHtml(app, p) + '</span></div>' +
-      '<div class="detail-actions">' +
+    const backIcon = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 5l-6 7 6 7"/></svg>';
+    const footer = '<div class="detail-footer">' +
       (adm.status === 'pending' ? '<button class="btn primary" data-act="promote" data-id="' + esc(adm.id) + '">收进组</button>' : '') +
-      '<button class="btn" data-act="edit-admission" data-id="' + esc(adm.id) + '">编辑住院信息</button>' +
-      '<button class="btn ghost" data-act="edit-intake" data-id="' + esc(adm.id) + '">编辑入院评估</button>' +
-      (adm.status === 'admitted'
-        ? '<button class="btn ghost" data-act="discharge" data-id="' + esc(adm.id) + '">出院</button>'
-        : (adm.status === 'discharged' ? '<button class="btn good" data-act="restore" data-id="' + esc(adm.id) + '">改回在院</button>' : '')) +
+      (adm.status === 'admitted' ? '<button class="btn ghost" data-act="discharge" data-id="' + esc(adm.id) + '">出院</button>' : '') +
+      (adm.status === 'discharged' ? '<button class="btn good" data-act="restore" data-id="' + esc(adm.id) + '">改回在院</button>' : '') +
       '<button class="btn danger" data-act="delete-admission" data-id="' + esc(adm.id) + '">删除</button>' +
-      '</div></div>' +
-      '<div class="detail-grid">' +
-      '<section class="card"><h2>基本信息</h2>' +
+      '</div>';
+
+    return '<div class="detail-back-row">' +
+      '<button class="back-icon" data-nav="list" aria-label="返回患者列表" title="返回患者列表">' + backIcon + '</button>' +
+      '<div class="detail-title"><span class="bed">' + esc(adm.bed) + '</span><h1>' + esc(p.name) + '</h1>' +
+      root.UI.statusBadge(adm.status) + teacherBadge(app, adm) +
+      '<span class="pc-tags">' + tagsHtml(app, p) + '</span></div></div>' +
+      '<div class="detail-top">' +
+      '<section class="card info-card"><div class="card-head"><h2>基本信息</h2>' +
+      '<button class="btn small ghost" data-act="edit-admission" data-id="' + esc(adm.id) + '">编辑</button></div>' +
       kv([
         ['性别 / 年龄', esc(p.sex || '—') + ' / ' + (p.age != null && p.age !== '' ? esc(p.age) : '—')],
         ['身高', (p.height != null && p.height !== '' ? esc(p.height) + ' cm' : '—')],
@@ -2304,11 +2567,20 @@ a { color: var(--accent); }
         ['手术', esc(adm.surgeryName || '—')],
         ['手术日期', esc(root.UI.fmtDateFull(adm.surgeryDate))],
         ['带教老师', esc(teacherName(app, adm.teacherId))],
-        ['状态', esc(adm.status === 'admitted' ? '在院' : (adm.status === 'pending' ? '待入院' : '已出院'))]
+        ['状态', esc(adm.status === 'admitted' ? '在院' : (adm.status === 'pending' ? '待入院' : '已出院'))],
+        ['备注', p.notes ? '<div class="text-block note-text">' + esc(p.notes) + '</div>' : '—']
       ]) +
-      (historyRows ? '<h3 style="margin-top:12px">床位变迁</h3>' + historyRows : '') +
+      (res.backfilled ? '<div class="small faint" style="margin-top:8px">补录：录入前任务已按默认天数跳过。</div>' : '') +
+      (bedHistory ? '<h3 style="margin-top:12px">床位变迁</h3>' + bedHistory : '') +
       '</section>' +
-      '<section class="card"><h2>入院评估</h2>' +
+      '<section class="card todo-card"><div class="card-head"><h2>待办 <span class="small muted">' + ctx.tasks.length + ' 项</span></h2>' +
+      '<button class="btn plus tiny" data-act="free-todo" data-admission="' + esc(adm.id) + '" aria-label="加待办" title="加待办">+</button></div>' +
+      '<div class="task-list">' + taskRows + '</div></section>' +
+      '</div>' +
+      '<section class="card"><div class="card-head"><h2>任务历史</h2><button class="btn small ghost" data-act="history" data-id="' + esc(adm.id) + '">返工 / 全部</button></div>' +
+      '<div class="history detail-history">' + history + '</div></section>' +
+      '<section class="card assessment-card"><div class="card-head"><h2>入院评估</h2>' +
+      '<button class="btn small ghost" data-act="edit-intake" data-assessment="1" data-id="' + esc(adm.id) + '">编辑</button></div>' +
       (intakeHas(adm) ? (
         '<h3>现病史</h3>' + textBlock(intake.presentIllness) +
         '<h3 style="margin-top:10px">既往史</h3>' + textBlock(intake.pastHistory) +
@@ -2323,18 +2595,13 @@ a { color: var(--accent); }
         '前交叉韧带：' + esc(ligament(knee.acl)) + '　后交叉韧带：' + esc(ligament(knee.pcl)) + '</div>' +
         '<h3 style="margin-top:10px">髋关节</h3>' +
         '<div class="text-block">肌力：' + esc(hip.strength ? hip.strength + ' 级' : '—') + '\n体态：' + esc(hip.posture || '—') + '</div>' +
-        (intake.notes ? '<h3 style="margin-top:10px">备注</h3>' + textBlock(intake.notes) : '')
+        (intake.notes ? '<h3 style="margin-top:10px">评估备注</h3>' + textBlock(intake.notes) : '')
       ) : '<div class="faint small">未填写入院评估。</div>') +
+      '<h3 style="margin-top:14px">照片附件</h3>' +
+      '<div class="photo-label">患者相册</div>' + photoGrid(app, patientPhotos, 'patient', p.id) +
+      '<div class="photo-label" style="margin-top:10px">本次入院（含近期检查）</div>' + photoGrid(app, admissionPhotos, 'admission', adm.id) +
       '</section>' +
-      '<section class="card span2"><h2>照片附件</h2>' +
-      '<h3>患者相册</h3>' + photoGrid(app, patientPhotos, 'patient', p.id) +
-      '<h3 style="margin-top:12px">本次入院（含近期检查）</h3>' + photoGrid(app, admissionPhotos, 'admission', adm.id) +
-      '</section>' +
-      '<section class="card"><h2>待办 <span class="small muted">' + ctx.tasks.length + ' 项</span></h2>' + tasks + '</section>' +
-      '<section class="card"><h2>自由待办</h2>' + freeHtml +
-      '<div style="margin-top:10px"><button class="btn small" data-act="free-todo" data-admission="' + esc(adm.id) + '">+ 加一条</button></div></section>' +
-      '<section class="card span2"><h2>任务历史</h2><div class="history">' + history + '</div></section>' +
-      '</div>';
+      footer;
   };
 
   // ---------- 新入院 ----------
@@ -2349,34 +2616,30 @@ a { color: var(--accent); }
     const val = function (v) { return v == null ? '' : esc(v); };
     const sel = function (v, target) { return v === target ? ' selected' : ''; };
     const isAdmitted = a.status === 'admitted';
-    const title = a.id && !isAdmitted ? '继续填写新入院' : (isAdmitted ? '编辑入院评估' : '新入院');
+    const assessmentOnly = !!d.assessmentOnly;
+    const title = assessmentOnly ? '编辑入院评估' : (a.id && !isAdmitted ? '继续填写新入院' : '新入院');
+    const sub = assessmentOnly
+      ? '补充已入院患者信息；只改评估内容，保存后回患者详情'
+      : '先保存草稿；复核后标记老师、收进组才进主患者库';
 
-    const fields = [
-      ['name', '姓名 *', 'text', p.name, '请输入姓名'],
-      ['age', '年龄', 'number', p.age, '岁'],
-      ['height', '身高', 'number', p.height, 'cm'],
-      ['bed', '床号 *', 'text', a.bed, '如 心内一11 / +2'],
-      ['admissionDate', '入院日期', 'date', a.admissionDate, ''],
-      ['diagnosis', '主诊断 *', 'text', a.diagnosis, '']
-    ];
-
-    return '<div class="page-head"><div><h1>' + title + '</h1><div class="sub">' +
-      (isAdmitted ? '修改后保存即可，入库状态不变' : '先保存草稿；复核后标记老师、收进组才进主患者库') + '</div></div>' +
+    return '<div class="page-head"><div><h1>' + title + '</h1><div class="sub">' + sub + '</div></div>' +
       '<button class="btn ghost" data-act="cancel-intake">取消</button></div>' +
       '<form id="intake-form" class="intake-form" autocomplete="off">' +
-      '<section class="card"><h2>基本信息</h2>' +
-      '<div class="grid2">' +
-      '<div class="field"><label>姓名 *</label><input name="name" value="' + val(p.name) + '" required></div>' +
-      '<div class="field"><label>性别</label><select name="sex"><option value="">未填</option>' +
-      '<option value="男"' + sel(p.sex, '男') + '>男</option><option value="女"' + sel(p.sex, '女') + '>女</option></select></div>' +
-      '<div class="field"><label>年龄</label><input name="age" type="number" inputmode="numeric" min="0" max="120" value="' + val(p.age) + '"></div>' +
-      '<div class="field"><label>身高（cm）</label><input name="height" type="number" inputmode="numeric" min="0" max="250" value="' + val(p.height) + '"></div>' +
-      '<div class="field"><label>床号 *</label><input name="bed" value="' + val(a.bed) + '" placeholder="如 心内一11 / +2"></div>' +
-      '<div class="field"><label>入院日期</label><input name="admissionDate" type="date" value="' + val(a.admissionDate) + '"></div>' +
-      '<div class="field" style="grid-column:1/-1"><label>主诊断 *</label><input name="diagnosis" value="' + val(a.diagnosis) + '" placeholder="如 左膝骨关节炎"></div>' +
-      '</div>' +
-      '<div class="form-note" style="margin-top:10px">手术日期入库后在详情页补；带教老师在「收进组」时选择。没填手术日期不会排拔管/换药/拆线。</div>' +
-      '</section>' +
+      (assessmentOnly
+        ? '<div class="form-note">患者：' + val(p.name) + ' · ' + val(a.bed || '未填床号') + '。住院信息请到详情页基本信息卡片右上角编辑。</div>'
+        : '<section class="card"><h2>基本信息</h2>' +
+          '<div class="grid2">' +
+          '<div class="field"><label>姓名 *</label><input name="name" value="' + val(p.name) + '" required></div>' +
+          '<div class="field"><label>性别</label><select name="sex"><option value="">未填</option>' +
+          '<option value="男"' + sel(p.sex, '男') + '>男</option><option value="女"' + sel(p.sex, '女') + '>女</option></select></div>' +
+          '<div class="field"><label>年龄</label><input name="age" type="number" inputmode="numeric" min="0" max="120" value="' + val(p.age) + '"></div>' +
+          '<div class="field"><label>身高（cm）</label><input name="height" type="number" inputmode="numeric" min="0" max="250" value="' + val(p.height) + '"></div>' +
+          '<div class="field"><label>床号 *</label><input name="bed" value="' + val(a.bed) + '" placeholder="如 心内一11 / +2"></div>' +
+          '<div class="field"><label>入院日期</label><input name="admissionDate" type="date" value="' + val(a.admissionDate) + '"></div>' +
+          '<div class="field" style="grid-column:1/-1"><label>主诊断 *</label><input name="diagnosis" value="' + val(a.diagnosis) + '" placeholder="如 左膝骨关节炎"></div>' +
+          '</div>' +
+          '<div class="form-note" style="margin-top:10px">手术日期入库后在详情页补；带教老师在「收进组」时选择。没填手术日期不会排拔管/换药/拆线。</div>' +
+          '</section>') +
       '<section class="card"><h2>现病史</h2><div class="field"><textarea name="presentIllness" placeholder="起病时间、加重时间、主要症状、诊疗经过…">' + val(i.presentIllness) + '</textarea></div></section>' +
       '<section class="card"><h2>既往史</h2><div class="field"><textarea name="pastHistory" placeholder="基础病、时间、用药、控制情况…">' + val(i.pastHistory) + '</textarea></div></section>' +
       '<section class="card"><h2>手术 / 外伤 / 过敏史</h2>' +
@@ -2422,7 +2685,7 @@ a { color: var(--accent); }
       '</section>' +
       '<section class="card"><h2>备注</h2><div class="field"><textarea name="intakeNotes" placeholder="其他需要记的">' + val(i.notes) + '</textarea></div></section>' +
       '<div class="form-actions">' +
-      '<button type="button" class="btn primary" data-act="save-intake" data-promote="0">' + (isAdmitted ? '保存' : '保存草稿') + '</button>' +
+      '<button type="button" class="btn primary" data-act="save-intake" data-promote="0">' + ((isAdmitted || assessmentOnly) ? '保存' : '保存草稿') + '</button>' +
       '<button type="button" class="btn ghost" data-act="cancel-intake">取消</button>' +
       '</div>' +
       '</form>';
@@ -2519,6 +2782,7 @@ a { color: var(--accent); }
   const Views = root.Views;
   const Zip = root.Zip;
   const Xlsx = root.Xlsx;
+  const esc = UI.esc;
 
   const App = {
     state: {
@@ -2529,6 +2793,7 @@ a { color: var(--accent); }
       q: '',
       selectedId: '',
       intake: null,
+      intakeReturn: null,
       today: '',
       data: null,
       standalone: false,
@@ -2624,14 +2889,26 @@ a { color: var(--accent); }
       document.addEventListener('submit', (e) => {
         if (e.target && e.target.id === 'intake-form') e.preventDefault();
       });
+
+      document.addEventListener('change', (e) => {
+        if (e.target && e.target.id === 'free-kind') {
+          const kind = e.target.value;
+          const title = document.querySelector('#free-form [name="title"]');
+          const repeat = document.querySelector('#free-form [name="type"]');
+          const interval = document.querySelector('#free-form [name="interval"]');
+          if (title && !title.value.trim()) title.value = Engine.COMMON_TASK_LABELS[kind] || '';
+          if (repeat) { repeat.value = kind === 'custom' ? repeat.value : 'once'; repeat.disabled = kind !== 'custom'; }
+          if (interval) interval.disabled = kind !== 'custom';
+        }
+      });
     },
 
     handleAct(act, el, e) {
       const adId = el.getAttribute('data-admission') || el.getAttribute('data-id') || '';
       switch (act) {
         case 'new-intake': this.openIntake(); break;
-        case 'edit-intake': this.openIntake(el.getAttribute('data-id')); break;
-        case 'cancel-intake': this.state.intake = null; this.go('pending'); break;
+        case 'edit-intake': this.openIntake(el.getAttribute('data-id'), { assessmentOnly: el.getAttribute('data-assessment') === '1' }); break;
+        case 'cancel-intake': this.cancelIntake(); break;
         case 'save-intake': this.saveIntake(el.getAttribute('data-promote') === '1'); break;
         case 'edit-admission': this.openEditAdmission(adId); break;
         case 'save-admission': this.saveAdmission(adId); break;
@@ -2643,8 +2920,12 @@ a { color: var(--accent); }
         case 'detail': this.go('detail', adId); break;
         case 'tasks': this.openTasks(adId); break;
         case 'task-action': this.doTaskAction(adId, el); break;
-        case 'free-todo': this.openFreeTodo(adId, el.getAttribute('data-id') || ''); break;
+        case 'task-plan': this.openTaskPlan(adId, el.getAttribute('data-type')); break;
+        case 'free-todo': this.openFreeTodo(el.getAttribute('data-admission') || '', el.getAttribute('data-id') || ''); break;
         case 'save-free': this.saveFreeTodo(adId); break;
+        case 'free-complete': this.completeFreeTodo(el.getAttribute('data-id')); break;
+        case 'history': this.openHistory(adId); break;
+        case 'edit-event': this.openEditEvent(el.getAttribute('data-event') || el.getAttribute('data-id')); break;
         case 'add-photo': this.addPhoto(el.getAttribute('data-owner-type'), el.getAttribute('data-owner-id')); break;
         case 'delete-photo': this.deletePhoto(el.getAttribute('data-id')); break;
         case 'view-photo': this.viewPhoto(el.getAttribute('data-id')); break;
@@ -2735,7 +3016,7 @@ a { color: var(--accent); }
         UI.fmtDate(this.state.today) + ' ' + UI.weekday(this.state.today) + '</div></div>' +
         '<nav class="nav">' + navHtml + '</nav>' +
         '</div></header>' +
-        '<main>' + content + '</main>' +
+        '<main class="page">' + content + '</main>' +
         '<div class="version">' + UI.esc(root.APP_VERSION || 'dev') + ' · 本机数据</div>' +
         '</div>';
     },
@@ -2787,12 +3068,15 @@ a { color: var(--accent); }
       if (!adm) return null;
       const patient = this.patient(adm.patientId) || { name: '', tags: [] };
       const res = Engine.computeAdmission(adm, this.state.data.events, this.state.data.freeTodos, this.state.data.settings, this.state.today);
-      return { adm: adm, patient: patient, res: res, tasks: res.current, primary: this.primaryOf(res) };
+      const tasks = res.current;
+      return {
+        adm: adm, patient: patient, res: res, tasks: tasks,
+        todayTasks: tasks.filter((t) => t.status === 'pending' || t.status === 'overdue'),
+        primary: this.primaryOf(res)
+      };
     },
     primaryOf(res) {
-      return res.current.find((t) => t.status === 'overdue') ||
-        res.current.find((t) => t.status === 'pending') ||
-        res.current.find((t) => t.status === 'upcoming') || null;
+      return res.current[0] || null;
     },
     overview() {
       return Engine.buildOverview(this.state.data.admissions, this.state.data.patients,
@@ -2813,10 +3097,13 @@ a { color: var(--accent); }
             String(a.diagnosis || '').toLowerCase().includes(q);
         })
         .sort((a, b) => Engine.compareBed(a.bed, b.bed))
-        .map((a) => ({ adm: a, patient: this.patient(a.patientId) || { name: '', tags: [] }, task: this.primaryOf(this.context(a.id).res) }));
+        .map((a) => {
+          const ctx = this.context(a.id);
+          return { adm: a, patient: this.patient(a.patientId) || { name: '', tags: [] }, task: ctx.primary, todayTasks: ctx.todayTasks };
+        });
     },
     freeTodosFor(admissionId) {
-      return (this.state.data.freeTodos || []).filter((f) => f.admissionId === admissionId && !f.deletedAt)
+      return (this.state.data.freeTodos || []).filter((f) => f.admissionId === admissionId && !f.deletedAt && !f.doneAt)
         .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
     },
     attachments(ownerType, ownerId) {
@@ -2829,26 +3116,36 @@ a { color: var(--accent); }
       return t ? t.name : '—';
     },
 
-    // ---------- 新入院 ----------
-    openIntake(id) {
+    // ---------- 新入院 / 补充入院评估 ----------
+    openIntake(id, opts) {
+      const o = opts || {};
+      const existingAdm = id ? this.admission(id) : null;
+      if (id && !existingAdm) { UI.toast('找不到这条住院记录'); return; }
+      const sourcePage = this.state.page;
+      const assessmentOnly = !!(existingAdm && (existingAdm.status === 'admitted' || o.assessmentOnly));
       let draft;
-      if (id) {
-        const adm = this.admission(id);
-        const p = this.patient(adm.patientId) || {};
+      if (existingAdm) {
+        const p = this.patient(existingAdm.patientId) || {};
         draft = {
-          admissionId: adm.id,
+          admissionId: existingAdm.id,
           patientId: p.id,
+          assessmentOnly: assessmentOnly,
+          returnPage: sourcePage === 'detail' ? 'detail' : (existingAdm.status === 'pending' ? 'pending' : 'detail'),
+          returnId: existingAdm.id,
           patient: { name: p.name || '', sex: p.sex || '', age: p.age != null ? p.age : '', height: p.height != null ? p.height : '' },
           admission: {
-            id: adm.id, bed: adm.bed || '', admissionDate: adm.admissionDate || '',
-            diagnosis: adm.diagnosis || '', status: adm.status || 'pending'
+            id: existingAdm.id, bed: existingAdm.bed || '', admissionDate: existingAdm.admissionDate || '',
+            diagnosis: existingAdm.diagnosis || '', status: existingAdm.status || 'pending'
           },
-          intake: JSON.parse(JSON.stringify(adm.intake || {})),
-          photos: this.attachments('admission', adm.id).map((a) => ({ id: a.id, existing: true, removed: false }))
+          intake: JSON.parse(JSON.stringify(existingAdm.intake || {})),
+          photos: this.attachments('admission', existingAdm.id).map((a) => ({ id: a.id, existing: true, removed: false }))
         };
       } else {
         draft = {
           admissionId: '', patientId: '',
+          assessmentOnly: false,
+          returnPage: 'pending',
+          returnId: '',
           patient: { name: '', sex: '', age: '', height: '' },
           admission: { bed: '', admissionDate: this.state.today, diagnosis: '', status: 'pending' },
           intake: {
@@ -2863,9 +3160,17 @@ a { color: var(--accent); }
         };
       }
       this.state.intake = draft;
+      this.state.intakeReturn = { page: draft.returnPage, id: draft.returnId };
       this.state.page = 'intake';
       this.render();
       root.scrollTo(0, 0);
+    },
+
+    cancelIntake() {
+      const ret = this.state.intakeReturn || { page: 'pending', id: '' };
+      this.state.intake = null;
+      this.state.intakeReturn = null;
+      this.go(ret.page || 'pending', ret.id || undefined);
     },
 
     readIntakeForm() {
@@ -2895,8 +3200,38 @@ a { color: var(--accent); }
       };
     },
 
+    readAssessmentForm() {
+      const form = document.getElementById('intake-form');
+      if (!form) return null;
+      const fd = new FormData(form);
+      const v = (k) => String(fd.get(k) == null ? '' : fd.get(k)).trim();
+      const num = (k) => { const s = v(k); return s === '' ? '' : Number(s); };
+      return {
+        intake: {
+          presentIllness: v('presentIllness'),
+          pastHistory: v('pastHistory'),
+          recentTests: v('recentTests'),
+          notes: v('intakeNotes'),
+          surgeryHistory: { has: v('surgeryHistoryHas') || 'no', text: v('surgeryHistoryText') },
+          traumaHistory: { has: v('traumaHistoryHas') || 'no', text: v('traumaHistoryText') },
+          allergyHistory: { has: v('allergyHistoryHas') || 'no', text: v('allergyHistoryText') },
+          knee: {
+            rom1: num('rom1'), rom2: num('rom2'), rom3: num('rom3'),
+            mcl: v('mcl') || 'not_examined', lcl: v('lcl') || 'not_examined',
+            acl: v('acl') || 'not_examined', pcl: v('pcl') || 'not_examined'
+          },
+          hip: { strength: v('hipStrength'), posture: v('hipPosture') }
+        }
+      };
+    },
+
     captureIntakeForm() {
       if (!this.state.intake) return;
+      if (this.state.intake.assessmentOnly) {
+        const a = this.readAssessmentForm();
+        if (a) this.state.intake.intake = a.intake;
+        return;
+      }
       const v = this.readIntakeForm();
       if (!v) return;
       this.state.intake.patient = v.patient;
@@ -2904,57 +3239,9 @@ a { color: var(--accent); }
       this.state.intake.intake = v.intake;
     },
 
-    async saveIntake(promote) {
-      const v = this.readIntakeForm();
-      if (!v) return;
-      if (!v.patient.name) { UI.toast('姓名必填'); return; }
-      if (promote && (!v.admission.bed || !v.admission.diagnosis)) {
-        UI.toast('收进组需要姓名、床号、主诊断'); return;
-      }
+    async saveIntakePhotos(admissionId, now) {
       const d = this.state.intake;
-      const now = Store.nowISO();
-      const existingAdm = d.admissionId ? this.admission(d.admissionId) : null;
-      const existingPatient = d.patientId ? this.patient(d.patientId) : null;
-      const patientId = existingPatient ? existingPatient.id : Store.uid();
-      const admissionId = existingAdm ? existingAdm.id : Store.uid();
-
-      const patient = Object.assign({}, existingPatient || {}, {
-        id: patientId,
-        name: v.patient.name,
-        sex: v.patient.sex,
-        age: v.patient.age,
-        height: v.patient.height,
-        tags: (existingPatient && existingPatient.tags) || [],
-        createdAt: (existingPatient && existingPatient.createdAt) || now,
-        updatedAt: now
-      });
-
-      const oldBed = existingAdm ? existingAdm.bed : '';
-      const bedHistory = (existingAdm && existingAdm.bedHistory) ? existingAdm.bedHistory.slice() : [];
-      if (existingAdm && oldBed !== v.admission.bed) {
-        bedHistory.push({ date: this.state.today, bed: v.admission.bed, note: oldBed ? '由 ' + oldBed + ' 调整' : '' });
-      }
-
-      const admission = Object.assign({}, existingAdm || {}, {
-        id: admissionId,
-        patientId: patientId,
-        bed: v.admission.bed,
-        admissionDate: v.admission.admissionDate,
-        diagnosis: v.admission.diagnosis,
-        surgeryName: (existingAdm && existingAdm.surgeryName) || '',
-        surgeryDate: (existingAdm && existingAdm.surgeryDate) || '',
-        teacherId: (existingAdm && existingAdm.teacherId) || '',
-        status: existingAdm && existingAdm.status === 'admitted' ? 'admitted' : (promote ? 'admitted' : 'pending'),
-        intake: v.intake,
-        bedHistory: bedHistory,
-        createdAt: (existingAdm && existingAdm.createdAt) || now,
-        updatedAt: now
-      });
-
-      await Store.put('patients', patient);
-      await Store.put('admissions', admission);
-
-      for (const ph of (d.photos || [])) {
+      for (const ph of ((d && d.photos) || [])) {
         if (ph.existing && ph.removed) {
           await Store.deleteAttachment(ph.id);
         } else if (!ph.existing && !ph.removed) {
@@ -2971,13 +3258,92 @@ a { color: var(--accent); }
           }, ph.full, ph.thumb);
         }
       }
+    },
+
+    async saveAssessment() {
+      const d = this.state.intake;
+      const a = this.readAssessmentForm();
+      if (!a) return;
+      const adm = d.admissionId ? this.admission(d.admissionId) : null;
+      if (!adm) { UI.toast('找不到这条住院记录'); return; }
+      const now = Store.nowISO();
+      adm.intake = a.intake;
+      adm.updatedAt = now;
+      await Store.put('admissions', adm);
+      await this.saveIntakePhotos(adm.id, now);
+      this.state.intake = null;
+      this.state.intakeReturn = null;
+      this.state.page = 'detail';
+      this.state.selectedId = adm.id;
+      await this.reload();
+      UI.toast('入院评估已保存');
+      root.scrollTo(0, 0);
+    },
+
+    async saveIntake(promote) {
+      const d = this.state.intake;
+      if (!d) return;
+      if (d.assessmentOnly) { await this.saveAssessment(); return; }
+      const v = this.readIntakeForm();
+      if (!v) return;
+      if (!v.patient.name) { UI.toast('姓名必填'); return; }
+      if (promote && (!v.admission.bed || !v.admission.diagnosis)) {
+        UI.toast('收进组需要姓名、床号、主诊断'); return;
+      }
+      const now = Store.nowISO();
+      const existingAdm = d.admissionId ? this.admission(d.admissionId) : null;
+      const existingPatient = d.patientId ? this.patient(d.patientId) : null;
+      const patientId = existingPatient ? existingPatient.id : Store.uid();
+      const admissionId = existingAdm ? existingAdm.id : Store.uid();
+
+      const patient = Object.assign({}, existingPatient || {}, {
+        id: patientId,
+        name: v.patient.name,
+        sex: v.patient.sex,
+        age: v.patient.age,
+        height: v.patient.height,
+        tags: (existingPatient && existingPatient.tags) || [],
+        notes: (existingPatient && existingPatient.notes) || '',
+        createdAt: (existingPatient && existingPatient.createdAt) || now,
+        updatedAt: now
+      });
+
+      const oldBed = existingAdm ? existingAdm.bed : '';
+      const bedHistory = (existingAdm && existingAdm.bedHistory) ? existingAdm.bedHistory.slice() : [];
+      if (existingAdm && oldBed !== v.admission.bed) {
+        bedHistory.push({ date: this.state.today, bed: v.admission.bed, note: oldBed ? '由 ' + oldBed + ' 调整' : '' });
+      }
+
+      const willAdmit = !!(promote || (existingAdm && existingAdm.status === 'admitted'));
+      const admission = Object.assign({}, existingAdm || {}, {
+        id: admissionId,
+        patientId: patientId,
+        bed: v.admission.bed,
+        admissionDate: v.admission.admissionDate,
+        diagnosis: v.admission.diagnosis,
+        surgeryName: (existingAdm && existingAdm.surgeryName) || '',
+        surgeryDate: (existingAdm && existingAdm.surgeryDate) || '',
+        teacherId: (existingAdm && existingAdm.teacherId) || '',
+        status: willAdmit ? 'admitted' : 'pending',
+        intake: v.intake,
+        bedHistory: bedHistory,
+        taskStartDate: (existingAdm && existingAdm.taskStartDate) || (willAdmit ? (existingAdm ? (Engine.admissionStartDate(existingAdm) || this.state.today) : this.state.today) : ''),
+        taskPlans: (existingAdm && existingAdm.taskPlans) || {},
+        createdAt: (existingAdm && existingAdm.createdAt) || now,
+        updatedAt: now
+      });
+
+      await Store.put('patients', patient);
+      await Store.put('admissions', admission);
+      await this.saveIntakePhotos(admissionId, now);
 
       this.state.intake = null;
-      const wasAdmitted = !!(existingAdm && existingAdm.status === 'admitted');
-      this.state.page = (promote || wasAdmitted) ? 'detail' : 'pending';
+      const ret = this.state.intakeReturn || {};
+      this.state.intakeReturn = null;
+      this.state.page = willAdmit ? 'detail' : (ret.page || 'pending');
       this.state.selectedId = admissionId;
       await this.reload();
-      UI.toast(promote ? '已收进组' : '已保存草稿');
+      UI.toast(promote ? '已收进组' : (willAdmit ? '已保存' : '已保存草稿'));
       root.scrollTo(0, 0);
     },
 
@@ -3005,6 +3371,7 @@ a { color: var(--accent); }
         '<div class="field" style="grid-column:1/-1"><label>主诊断 *</label><input name="diagnosis" value="' + UI.esc(adm.diagnosis || '') + '"></div>' +
         '<div class="field"><label>手术名称</label><input name="surgeryName" value="' + UI.esc(adm.surgeryName || '') + '"></div>' +
         '<div class="field"><label>手术日期</label><input name="surgeryDate" type="date" value="' + UI.esc(adm.surgeryDate || '') + '"></div>' +
+        '<div class="field" style="grid-column:1/-1"><label>备注</label><textarea name="notes" placeholder="如 糖尿病、抗凝药、家属联系方式…">' + UI.esc(p.notes || '') + '</textarea></div>' +
         '<div class="field" style="grid-column:1/-1"><label>带教老师</label><select name="teacherId">' + teacherOpts + '</select></div>' +
         '<div class="field" style="grid-column:1/-1"><label>标签</label><div class="row">' + (tags || '<span class="faint small">设置里先添加标签</span>') + '</div></div>' +
         '</div></form>';
@@ -3046,6 +3413,7 @@ a { color: var(--accent); }
         age: v('age') === '' ? '' : Number(v('age')),
         height: v('height') === '' ? '' : Number(v('height')),
         tags: fd.getAll('tags'),
+        notes: v('notes'),
         updatedAt: now
       });
       const admission = Object.assign({}, adm, {
@@ -3088,6 +3456,7 @@ a { color: var(--accent); }
         '<div class="field" style="grid-column:1/-1"><label>主诊断</label><input name="diagnosis" value="' + UI.esc(a.diagnosis || '') + '"></div>' +
         '<div class="field"><label>手术名称</label><input name="surgeryName" value="' + UI.esc(a.surgeryName || '') + '"></div>' +
         '<div class="field"><label>手术日期</label><input name="surgeryDate" type="date" value="' + UI.esc(a.surgeryDate || '') + '"></div>' +
+        '<div class="field" style="grid-column:1/-1"><label>备注</label><textarea name="notes" placeholder="如 糖尿病、抗凝药、家属联系方式…">' + UI.esc(p.notes || '') + '</textarea></div>' +
         '<div class="field" style="grid-column:1/-1"><label>带教老师</label><select name="teacherId">' + teacherOpts + '</select></div>' +
         '<div class="field" style="grid-column:1/-1"><label>标签</label><div class="row">' + (tags || '<span class="faint small">设置里先添加标签</span>') + '</div></div>' +
         '</div></form>';
@@ -3132,6 +3501,7 @@ a { color: var(--accent); }
         age: v('age') === '' ? '' : Number(v('age')),
         height: v('height') === '' ? '' : Number(v('height')),
         tags: fd.getAll('tags'),
+        notes: v('notes'),
         createdAt: now,
         updatedAt: now
       };
@@ -3146,6 +3516,8 @@ a { color: var(--accent); }
         teacherId: v('teacherId'),
         status: 'admitted',
         intake: {},
+        taskStartDate: this.state.today,
+        taskPlans: {},
         bedHistory: [],
         createdAt: now,
         updatedAt: now
@@ -3208,6 +3580,8 @@ a { color: var(--accent); }
       if (!teacherId) { this.openPromote(id); return false; }
       adm.teacherId = teacherId;
       adm.status = 'admitted';
+      adm.taskStartDate = this.state.today;
+      adm.taskPlans = adm.taskPlans || {};
       adm.updatedAt = Store.nowISO();
       await Store.put('admissions', adm);
       await this.reload();
@@ -3266,8 +3640,8 @@ a { color: var(--accent); }
     openTasks(admissionId) {
       const ctx = this.context(admissionId);
       if (!ctx) { UI.toast('找不到患者'); return; }
-      const actionable = ctx.tasks.filter((t) => t.status === 'pending' || t.status === 'overdue');
-      if (!actionable.length) { UI.toast('没有当下要处理的任务'); return; }
+      const actionable = ctx.tasks.filter((t) => t.status === 'pending' || t.status === 'overdue' || t.status === 'upcoming');
+      if (!actionable.length) { UI.toast('没有可处理的任务'); return; }
       const self = this;
       const body = '<div class="grid2">' +
         '<div class="field"><label>操作日期（补录可改）</label><input id="task-date" type="date" value="' + UI.esc(this.state.today) + '"></div>' +
@@ -3277,15 +3651,71 @@ a { color: var(--accent); }
           const buttons = t.actions.map(function (a) {
             const labels = { done: '已完成', defer: '明天再做', senior: '上级处理', not_needed: '不再需要' };
             return '<button class="btn small" data-act="task-action" data-admission="' + UI.esc(admissionId) + '" data-type="' + UI.esc(t.type) + '" data-action="' + a + '">' + labels[a] + '</button>';
-          }).join('') + (t.type === 'dressing'
+          }).join('') + ((t.type === 'dressing' || t.kind === 'dressing')
             ? '<button class="btn small ghost" data-act="task-action" data-admission="' + UI.esc(admissionId) + '" data-type="' + UI.esc(t.type) + '" data-action="nonplanned">非计划换药</button>'
             : '');
           return '<div class="task-card ' + t.status + '"><div><div class="task-name">' + UI.esc(t.label) + '</div>' +
-            '<div class="task-due">' + UI.esc((t.status === 'overdue' ? '逾期 ' + t.overdueDays + ' 天' : '今日') + (t.dueDate ? ' · ' + UI.fmtDate(t.dueDate) : '')) + '</div></div>' +
+            '<div class="task-due">' + UI.esc(t.relative || (t.status === 'overdue' ? '逾期 ' + t.overdueDays + ' 天' : '今天')) +
+            (t.dueDate ? ' · ' + UI.fmtDate(t.dueDate) : '') + '</div></div>' +
             '<div class="task-actions">' + buttons + '</div></div>';
-        }).join('') + '</div>';
+        }).join('') + '</div>' +
+        '<div style="margin-top:10px"><button class="btn small ghost" data-act="history" data-id="' + UI.esc(admissionId) + '">编辑任务历史</button></div>';
 
       UI.sheet({ title: '处理待办 · ' + ctx.adm.bed + ' ' + ctx.patient.name, body: body, actions: [{ label: '关闭', className: 'ghost' }] });
+    },
+
+    openTaskPlan(admissionId, type) {
+      const ctx = this.context(admissionId);
+      if (!ctx) { UI.toast('找不到患者'); return; }
+      const task = ctx.res.tasks.find((t) => t.type === type);
+      if (!task) { UI.toast('找不到这个任务'); return; }
+      const adm = ctx.adm;
+      const plan = adm.taskPlans && adm.taskPlans[type] ? adm.taskPlans[type] : null;
+      const due = task.dueDate || this.state.today;
+      const interval = plan && plan.interval ? plan.interval : (task.interval || 1);
+      const repeatable = task.type === 'dressing' || task.type.indexOf('free:') === 0;
+      const self = this;
+      const body = '<form id="task-plan-form">' +
+        '<p class="small muted">「' + UI.esc(task.label) + '」只对 <b>' + UI.esc(ctx.patient.name || '') + '</b> 这位患者生效。</p>' +
+        '<div class="grid2">' +
+        '<div class="field"><label>下一次日期</label><input id="plan-due" type="date" value="' + UI.esc(due) + '"></div>' +
+        '<div class="field"><label>循环天数' + (repeatable ? '' : '（本任务不用）') + '</label><input id="plan-interval" type="number" min="1" inputmode="numeric" value="' + UI.esc(interval) + '"></div>' +
+        '</div><p class="small faint">循环天数只对这个患者生效；换药完成后会从完成日按这个间隔继续排。</p>' +
+        '</form>';
+      UI.modal({
+        title: '调整下一次 · ' + task.label,
+        body: body,
+        actions: [
+          { label: '取消', className: 'ghost' },
+          {
+            label: '恢复默认', className: 'ghost', onClick: async function (close) {
+              if (adm.taskPlans) delete adm.taskPlans[type];
+              adm.updatedAt = Store.nowISO();
+              await Store.put('admissions', adm);
+              await self.reload();
+              close();
+              UI.toast('已恢复默认排期');
+            }
+          },
+          {
+            label: '保存', className: 'primary', onClick: async function (close) {
+              const dateEl = document.getElementById('plan-due');
+              const intEl = document.getElementById('plan-interval');
+              const next = dateEl ? dateEl.value : '';
+              const n = intEl ? Number(intEl.value) : 0;
+              if (!Engine.validDate(next)) { UI.toast('先选下一次日期'); return; }
+              if (!n || n < 1) { UI.toast('循环天数至少 1 天'); return; }
+              adm.taskPlans = adm.taskPlans || {};
+              adm.taskPlans[type] = { dueDate: next, interval: n, setAt: Store.nowISO() };
+              adm.updatedAt = Store.nowISO();
+              await Store.put('admissions', adm);
+              await self.reload();
+              close();
+              UI.toast('已调整排期');
+            }
+          }
+        ]
+      });
     },
 
     async doTaskAction(admissionId, el) {
@@ -3301,24 +3731,40 @@ a { color: var(--accent); }
     },
 
     async recordAction(admissionId, taskType, action, date, note) {
+      const ctx = this.context(admissionId);
+      const task = ctx ? ctx.res.tasks.find((t) => t.type === taskType) : null;
+      const free = task && task.freeTodoId ? (this.state.data.freeTodos || []).find((x) => x.id === task.freeTodoId) : null;
+      const coreType = task && task.kind && task.kind !== 'custom' &&
+        (action === 'done' || action === 'senior' || action === 'nonplanned') ? task.kind : '';
       const now = Store.nowISO();
       const ev = {
         id: Store.uid(),
         admissionId: admissionId,
-        taskType: taskType,
+        taskType: coreType || taskType,
         action: action,
         date: date || this.state.today,
         note: note || '',
+        sourceFreeTodoId: free ? free.id : '',
         createdAt: now,
         updatedAt: now
       };
       await Store.put('events', ev);
+      if (free && (coreType || action === 'not_needed')) {
+        free.doneAt = now;
+        free.updatedAt = now;
+        await Store.put('freeTodos', free);
+      }
       await this.reload();
       const labels = { done: '已完成', defer: '明天再做', senior: '上级处理', not_needed: '不再需要', nonplanned: '非计划换药' };
       UI.toast('已记录：' + (labels[action] || action), async () => {
         ev.deletedAt = Store.nowISO();
         ev.updatedAt = ev.deletedAt;
         await Store.put('events', ev);
+        if (free && (coreType || action === 'not_needed')) {
+          free.doneAt = '';
+          free.updatedAt = Store.nowISO();
+          await Store.put('freeTodos', free);
+        }
         await this.reload();
       });
     },
@@ -3326,50 +3772,75 @@ a { color: var(--accent); }
     // ---------- 自由待办 ----------
     openFreeTodo(admissionId, id) {
       const f = id ? (this.state.data.freeTodos || []).find((x) => x.id === id) : null;
-      const admId = f ? f.admissionId : admissionId;
+      const anchorId = f ? (f.admissionId || '') : (admissionId || '');
+      const kind = f && f.kind ? f.kind : 'custom';
+      const kindOpts = [['dressing', '换药'], ['stitch', '拆线'], ['preop', '备术'], ['drain', '拔管'], ['custom', '自定义']]
+        .map(function (pair) {
+          return '<option value="' + pair[0] + '"' + (kind === pair[0] ? ' selected' : '') + '>' + pair[1] + '</option>';
+        }).join('');
+      const anchorOpts = '<option value="">不锚定（只在总览显示）</option>' + this.admittedList().map((a) => {
+        const p = this.patient(a.patientId) || {};
+        return '<option value="' + UI.esc(a.id) + '"' + (anchorId === a.id ? ' selected' : '') + '>' +
+          UI.esc((a.bed || '') + ' ' + (p.name || '')) + '</option>';
+      }).join('');
+      const type = f && f.type === 'repeat' ? 'repeat' : 'once';
       const body = '<form id="free-form">' +
+        '<div class="field"><label>常用任务</label><select id="free-kind" name="kind">' + kindOpts + '</select></div>' +
         '<div class="field"><label>标题 *</label><input name="title" value="' + UI.esc(f ? f.title : '') + '" placeholder="如 复查血常规 / 联系家属签字"></div>' +
+        '<div class="field"><label>锚定患者</label><select name="admissionId">' + anchorOpts + '</select></div>' +
         '<div class="grid2">' +
-        '<div class="field"><label>类型</label><select name="type"><option value="once"' + (!f || f.type !== 'repeat' ? ' selected' : '') + '>一次</option><option value="repeat"' + (f && f.type === 'repeat' ? ' selected' : '') + '>重复</option></select></div>' +
-        '<div class="field"><label>间隔天数（重复用）</label><select name="interval"><option value="2"' + (!f || String(f.interval) !== '3' ? ' selected' : '') + '>每 2 天</option><option value="3"' + (f && String(f.interval) === '3' ? ' selected' : '') + '>每 3 天</option></select></div>' +
-        '<div class="field"><label>截止日期（可选）</label><input name="dueDate" type="date" value="' + UI.esc(f ? f.dueDate || '' : '') + '"></div>' +
-        '<div class="field"><label>优先级</label><select name="priority"><option value="normal"' + (!f || f.priority !== 'important' ? ' selected' : '') + '>普通</option><option value="important"' + (f && f.priority === 'important' ? ' selected' : '') + '>重要</option></select></div>' +
+        '<div class="field"><label>类型</label><select name="type"' + (kind !== 'custom' ? ' disabled' : '') + '><option value="once"' + (type === 'once' ? ' selected' : '') + '>一次</option><option value="repeat"' + (type === 'repeat' ? ' selected' : '') + '>重复</option></select></div>' +
+        '<div class="field"><label>循环天数（重复用）</label><input name="interval" type="number" min="1" inputmode="numeric" value="' + UI.esc(f && f.interval ? f.interval : 2) + '"' + (kind !== 'custom' ? ' disabled' : '') + '></div>' +
+        '<div class="field"><label>计划日期</label><input name="dueDate" type="date" value="' + UI.esc(f ? (f.dueDate || '') : this.state.today) + '"></div>' +
         '</div>' +
         '<div class="field"><label>备注</label><input name="note" value="' + UI.esc(f ? f.note || '' : '') + '"></div>' +
+        '<p class="small muted" style="margin:10px 0 0">常用任务会进入该患者的任务历史；换药在计划外完成时会刷新下一次换药日期。不锚定患者时只在总览显示。</p>' +
         '</form>';
       const self = this;
-      UI.modal({
-        title: f ? '编辑自由待办' : '加一条自由待办',
-        body: body,
-        actions: [
-          { label: '取消', className: 'ghost' },
-          {
-            label: '保存', className: 'primary', onClick: async function (close) {
-              const ok = await self.saveFreeTodo(admId, f ? f.id : '');
-              if (ok) close();
-            }
+      const actions = [
+        { label: '取消', className: 'ghost' },
+        {
+          label: '保存', className: 'primary', onClick: async function (close) {
+            const ok = await self.saveFreeTodo(admissionId, f ? f.id : '');
+            if (ok) close();
           }
-        ]
-      });
+        }
+      ];
+      if (f && !f.admissionId && !f.doneAt) {
+        actions.splice(1, 0, {
+          label: '标记完成', className: 'good', onClick: async function (close) {
+            await self.completeFreeTodo(f.id);
+            close();
+          }
+        });
+      }
+      UI.modal({ title: f ? '编辑待办' : '加自由待办', body: body, actions: actions });
     },
 
     async saveFreeTodo(admissionId, id) {
       const form = document.getElementById('free-form');
       if (!form) return false;
       const fd = new FormData(form);
-      const title = String(fd.get('title') || '').trim();
+      const v = (k) => String(fd.get(k) == null ? '' : fd.get(k)).trim();
+      const anchorId = v('admissionId');
+      const anchor = anchorId ? this.admission(anchorId) : null;
+      const kind = v('kind') || 'custom';
+      if (kind !== 'custom' && !anchor) { UI.toast('常用任务要先选一位患者'); return false; }
+      const title = v('title') || Engine.COMMON_TASK_LABELS[kind] || '';
       if (!title) { UI.toast('标题必填'); return false; }
       const now = Store.nowISO();
       const old = id ? (this.state.data.freeTodos || []).find((x) => x.id === id) : null;
+      const isCommon = kind !== 'custom';
       const f = Object.assign({}, old || {}, {
         id: old ? old.id : Store.uid(),
-        admissionId: admissionId,
+        admissionId: anchor ? anchor.id : '',
+        patientId: anchor ? anchor.patientId : '',
         title: title,
-        type: fd.get('type') === 'repeat' ? 'repeat' : 'once',
-        interval: Number(fd.get('interval') || 2),
-        dueDate: String(fd.get('dueDate') || ''),
-        priority: fd.get('priority') === 'important' ? 'important' : 'normal',
-        note: String(fd.get('note') || ''),
+        kind: kind,
+        type: isCommon ? 'once' : (fd.get('type') === 'repeat' ? 'repeat' : 'once'),
+        interval: isCommon ? 1 : Number(fd.get('interval') || 2),
+        dueDate: v('dueDate') || this.state.today,
+        note: v('note'),
         createdAt: (old && old.createdAt) || now,
         updatedAt: now
       });
@@ -3377,6 +3848,121 @@ a { color: var(--accent); }
       await this.reload();
       UI.toast('已保存待办');
       return true;
+    },
+
+    async completeFreeTodo(id) {
+      const f = (this.state.data.freeTodos || []).find((x) => x.id === id);
+      if (!f) return;
+      const now = Store.nowISO();
+      const doneDate = Engine.localDateFromISO(now) || this.state.today;
+      f.doneAt = now;
+      if (f.type === 'repeat') f.dueDate = Engine.addDays(doneDate, Number(f.interval || 2));
+      f.updatedAt = now;
+      await Store.put('freeTodos', f);
+      await this.reload();
+      UI.toast('已完成');
+    },
+
+    // ---------- 任务历史 / 返工 ----------
+    historyRowHtml(h) {
+      return '<div class="history-item">' +
+        '<span class="history-date">' + esc(UI.fmtDate(h.date)) + '</span>' +
+        '<span class="history-main"><b>' + esc(h.label) + '</b> · ' + esc(h.actionLabel) + (h.bySenior ? '（上级）' : '') + '</span>' +
+        (h.note ? '<span class="history-note">' + esc(h.note) + '</span>' : '') +
+        '<button class="btn small ghost history-edit" data-act="edit-event" data-event="' + esc(h.eventId || h.id) + '">编辑</button>' +
+        '</div>';
+    },
+
+    openHistory(admissionId) {
+      const all = !admissionId;
+      const list = all ? this.admittedList() : [this.admission(admissionId)].filter(Boolean);
+      let body = '';
+      list.forEach((adm) => {
+        const ctx = this.context(adm.id);
+        if (!ctx) return;
+        const rows = ctx.res.history.map((h) => this.historyRowHtml(h)).join('') || '<div class="faint small">暂无记录</div>';
+        body += '<section class="history-group"><div class="history-group-head"><b>' + esc(adm.bed || '') + ' ' + esc(ctx.patient.name || '') + '</b>' +
+          '<span class="faint small">' + esc(adm.diagnosis || '') + '</span></div>' + rows + '</section>';
+      });
+      if (!body) body = '<div class="faint small">还没有任务历史。完成一次任务后会出现记录，可在这里改日期、改动作或删除。</div>';
+      UI.sheet({
+        title: all ? '任务历史 · 全部在院' : '任务历史 · 返工',
+        body: '<p class="small muted">修改日期/动作或删除记录后，排期会立即重算；换药序号也会重新编号。</p>' + body,
+        actions: [{ label: '关闭', className: 'ghost' }]
+      });
+    },
+
+    openEditEvent(eventId) {
+      const ev = (this.state.data.events || []).find((x) => x.id === eventId && !x.deletedAt);
+      if (!ev) { UI.toast('找不到这条历史'); return; }
+      const adm = this.admission(ev.admissionId);
+      if (!adm) { UI.toast('找不到这条住院记录'); return; }
+      const ctx = this.context(adm.id);
+      const item = ctx ? ctx.res.history.find((h) => (h.eventId || h.id) === ev.id) : null;
+      document.querySelectorAll('.sheet-backdrop').forEach((x) => x.remove());
+      const opts = ['done', 'senior', 'nonplanned', 'defer', 'not_needed'].map((a) =>
+        '<option value="' + a + '"' + (ev.action === a ? ' selected' : '') + '>' + UI.esc(Engine.ACTION_LABELS[a] || a) + '</option>').join('');
+      const body = '<form id="event-form">' +
+        '<p class="small muted">' + esc(adm.bed || '') + ' ' + esc((this.patient(adm.patientId) || {}).name || '') + ' · ' + esc(item ? item.label : Engine.TASK_LABELS[ev.taskType] || '待办') + '</p>' +
+        '<div class="grid2">' +
+        '<div class="field"><label>日期</label><input id="event-date" type="date" value="' + esc(ev.date || '') + '"></div>' +
+        '<div class="field"><label>动作</label><select id="event-action">' + opts + '</select></div>' +
+        '</div>' +
+        '<div class="field"><label>备注</label><input id="event-note" value="' + esc(ev.note || '') + '"></div>' +
+        '</form>';
+      const self = this;
+      UI.modal({
+        title: '编辑任务历史',
+        body: body,
+        actions: [
+          { label: '取消', className: 'ghost' },
+          {
+            label: '删除', className: 'danger', onClick: async function (close) {
+              const ok = await UI.confirm('删除这条历史？排期会按剩余记录重算。', { okLabel: '删除', danger: true });
+              if (!ok) return;
+              ev.deletedAt = Store.nowISO();
+              ev.updatedAt = ev.deletedAt;
+              await Store.put('events', ev);
+              if (ev.sourceFreeTodoId) {
+                const src = (self.state.data.freeTodos || []).find((x) => x.id === ev.sourceFreeTodoId);
+                if (src) {
+                  src.doneAt = '';
+                  src.updatedAt = Store.nowISO();
+                  await Store.put('freeTodos', src);
+                }
+              }
+              await self.reload();
+              close();
+              UI.toast('历史已删除');
+            }
+          },
+          {
+            label: '保存', className: 'primary', onClick: async function (close) {
+              const d = document.getElementById('event-date');
+              const a = document.getElementById('event-action');
+              const n = document.getElementById('event-note');
+              if (!d || !Engine.validDate(d.value)) { UI.toast('日期无效'); return; }
+              ev.date = d.value;
+              ev.action = a ? a.value : ev.action;
+              ev.note = n ? n.value.trim() : '';
+              ev.updatedAt = Store.nowISO();
+              await Store.put('events', ev);
+              if (ev.sourceFreeTodoId) {
+                const src = (self.state.data.freeTodos || []).find((x) => x.id === ev.sourceFreeTodoId);
+                if (src) {
+                  const terminal = ev.action === 'done' || ev.action === 'senior' || ev.action === 'nonplanned';
+                  src.doneAt = terminal ? Store.nowISO() : '';
+                  src.updatedAt = Store.nowISO();
+                  await Store.put('freeTodos', src);
+                }
+              }
+              await self.reload();
+              close();
+              UI.toast('历史已修正');
+            }
+          }
+        ]
+      });
     },
 
     // ---------- 照片 ----------
@@ -3784,12 +4370,13 @@ a { color: var(--accent); }
       }
       const now = Store.nowISO();
       const d = (n) => Engine.addDays(this.state.today, n);
-      const p1 = { id: 'demo-p1', name: '张三', sex: '男', age: 68, height: 170, tags: ['mei'], createdAt: now, updatedAt: now };
+      const p1 = { id: 'demo-p1', name: '张三', sex: '男', age: 68, height: 170, tags: ['mei'], notes: '高血压，晨起测血压。', createdAt: now, updatedAt: now };
       const p2 = { id: 'demo-p2', name: '李四', sex: '女', age: 72, height: 158, tags: ['yi'], createdAt: now, updatedAt: now };
       const p3 = { id: 'demo-p3', name: '王五', sex: '男', age: 55, height: 175, tags: ['gan'], createdAt: now, updatedAt: now };
       const a1 = {
         id: 'demo-a1', patientId: 'demo-p1', bed: '3', diagnosis: '左膝骨关节炎', surgeryName: '左膝置换',
         surgeryDate: d(-3), admissionDate: d(-6), status: 'admitted', teacherId: 't1',
+        taskStartDate: this.state.today, taskPlans: {},
         intake: {
           presentIllness: '左膝疼痛 2 年，加重 1 月。', pastHistory: '高血压 5 年，口服氨氯地平。',
           recentTests: '膝关节 X 线：左膝内侧间隙变窄。',
@@ -3802,6 +4389,7 @@ a { color: var(--accent); }
       const a2 = {
         id: 'demo-a2', patientId: 'demo-p2', bed: '心11', diagnosis: '髋关节骨关节炎', surgeryName: '全髋置换',
         surgeryDate: d(1), admissionDate: d(-1), status: 'admitted', teacherId: 't2',
+        taskStartDate: this.state.today, taskPlans: {},
         intake: {
           presentIllness: '右髋疼痛 3 年，跛行。', pastHistory: '糖尿病 8 年，二甲双胍。',
           recentTests: '髋关节 X 线：右髋关节间隙变窄。',
@@ -3814,6 +4402,7 @@ a { color: var(--accent); }
       const a3 = {
         id: 'demo-a3', patientId: 'demo-p3', bed: '+2', diagnosis: '股骨颈骨折', surgeryName: '',
         surgeryDate: '', admissionDate: d(-2), status: 'admitted', teacherId: 't1',
+        taskStartDate: this.state.today, taskPlans: {},
         intake: {
           presentIllness: '摔伤后右髋痛 1 天。', pastHistory: '否认基础病。', recentTests: '骨盆 X 线：右股骨颈骨折。',
           surgeryHistory: { has: 'no', text: '' }, traumaHistory: { has: 'yes', text: '1 天前摔倒' }, allergyHistory: { has: 'no', text: '' },
@@ -3823,13 +4412,15 @@ a { color: var(--accent); }
         bedHistory: [], createdAt: now, updatedAt: now
       };
       const events = [
-        { id: 'demo-e1', admissionId: 'demo-a1', taskType: 'preop_film', action: 'done', date: d(-4), note: '', createdAt: now, updatedAt: now },
-        { id: 'demo-e2', admissionId: 'demo-a1', taskType: 'preop_mark', action: 'done', date: d(-4), note: '', createdAt: now, updatedAt: now },
+        { id: 'demo-e1', admissionId: 'demo-a1', taskType: 'preop', action: 'done', date: d(-4), note: '', createdAt: now, updatedAt: now },
         { id: 'demo-e3', admissionId: 'demo-a1', taskType: 'drain', action: 'done', date: d(-2), note: '', createdAt: now, updatedAt: now }
       ];
       const free = [{
-        id: 'demo-f1', admissionId: 'demo-a3', title: '复查血常规', type: 'once', interval: 2,
-        dueDate: this.state.today, priority: 'important', note: '', createdAt: now, updatedAt: now
+        id: 'demo-f1', admissionId: 'demo-a3', patientId: 'demo-p3', title: '复查血常规', kind: 'custom', type: 'once', interval: 2,
+        dueDate: this.state.today, note: '', createdAt: now, updatedAt: now
+      }, {
+        id: 'demo-f2', admissionId: '', patientId: '', title: '取检查报告', kind: 'custom', type: 'once', interval: 2,
+        dueDate: this.state.today, note: '', createdAt: now, updatedAt: now
       }];
       await Store.bulkPut('patients', [p1, p2, p3]);
       await Store.bulkPut('admissions', [a1, a2, a3]);
