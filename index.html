@@ -415,7 +415,7 @@ a { color: var(--accent); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.21.1911';</script>
+<script>window.APP_VERSION = 'v2026.10.21.1914';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -2244,9 +2244,10 @@ a { color: var(--accent); }
 
     const tasks = ctx.tasks.map(function (t) {
       const canAct = t.status === 'pending' || t.status === 'overdue';
+      const when = t.status === 'overdue' ? '逾期 ' + t.overdueDays + ' 天' : (t.status === 'pending' ? '今日' : '预计');
       return '<div class="task-card ' + t.status + '">' +
         '<div><div class="task-name">' + esc(t.label) + '</div>' +
-        '<div class="task-due">' + esc(dayText(app, t)) + (t.dueDate ? ' · ' + root.UI.fmtDate(t.dueDate) : '') + '</div></div>' +
+        '<div class="task-due">' + esc(when) + (t.dueDate ? ' · ' + root.UI.fmtDate(t.dueDate) : '') + '</div></div>' +
         '<div class="task-actions">' + (canAct
           ? '<button class="btn small soft" data-act="tasks" data-admission="' + esc(adm.id) + '">处理</button>'
           : '<span class="small faint">未到时间</span>') + '</div></div>';
@@ -3481,11 +3482,15 @@ a { color: var(--accent); }
       UI.toast('同步包已导出（数据 + ' + photos.manifest.length + ' 张照片）');
     },
 
-    async importSync() {
-      const files = await this.pickFiles('application/zip,.zip', false);
-      if (!files.length) return;
+    async importSync(file) {
+      let f = file;
+      if (!f) {
+        const picked = await this.pickFiles('application/zip,.zip', false);
+        if (!picked.length) return;
+        f = picked[0];
+      }
       try {
-        const buf = await UI.readFile(files[0], 'arrayBuffer');
+        const buf = await UI.readFile(f, 'arrayBuffer');
         const entries = Zip.read(new Uint8Array(buf));
         const dataEntry = entries.find((e) => e.name === 'data.json');
         if (!dataEntry) throw new Error('同步包里没有 data.json');
