@@ -144,6 +144,11 @@ a { color: var(--accent); }
 .btn.good { background: var(--green-soft); border-color: transparent; color: var(--green); }
 .btn.small { min-height: 34px; padding: 6px 10px; font-size: 13px; border-radius: 10px; }
 .btn.block { width: 100%; }
+.btn.plus {
+  width: 44px; min-width: 44px; height: 44px; padding: 0;
+  border-radius: 50%; background: var(--accent); border-color: var(--accent);
+  color: #fff; font-size: 26px; font-weight: 400; line-height: 1;
+}
 .btn:disabled { opacity: .45; pointer-events: none; }
 .icon-btn { border: 0; background: transparent; color: var(--muted); font-size: 20px; padding: 6px; border-radius: 8px; }
 
@@ -415,7 +420,7 @@ a { color: var(--accent); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.21.1914';</script>
+<script>window.APP_VERSION = 'v2026.10.21.2312';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -2062,8 +2067,8 @@ a { color: var(--accent); }
 
     if (!body) {
       if (!ov.stats.inHospital) {
-        body = '<div class="empty"><h3>还没有在院病人</h3><p>点「新入院」开始，或先在设置里载入示例数据。</p>' +
-          '<button class="btn primary" data-act="new-intake">+ 新入院</button></div>';
+        body = '<div class="empty"><h3>还没有在院病人</h3><p>值班新收在「待入院」里写病史；平时收病人用患者页右上角「+」。</p>' +
+          '<button class="btn" data-nav="pending">去待入院</button></div>';
       } else {
         body = '<div class="empty"><h3>' + (day === 'tomorrow' ? '明天暂时没有排定任务' : '今天没有待办') + '</h3><p>可以到患者列表查看全部病人。</p></div>';
       }
@@ -2147,8 +2152,8 @@ a { color: var(--accent); }
     let listHtml = '';
     if (!items.length) {
       listHtml = '<div class="empty"><h3>' + (total ? '没有符合筛选的病人' : '还没有在院病人') + '</h3>' +
-        '<p>' + (total ? '换个筛选或点重置。' : '点「新入院」开始。') + '</p>' +
-        (total ? '<button class="btn ghost" data-act="filter-reset">重置筛选</button>' : '<button class="btn primary" data-act="new-intake">+ 新入院</button>') +
+        '<p>' + (total ? '换个筛选或点重置。' : '点右上角「+」录入患者卡片。') + '</p>' +
+        (total ? '<button class="btn ghost" data-act="filter-reset">重置筛选</button>' : '<button class="btn primary plus" data-act="add-patient" aria-label="新增患者" title="新增患者">+</button>') +
         '</div>';
     } else if (app.state.listMode === 'table') {
       const rows = items.map(function (it) {
@@ -2191,7 +2196,7 @@ a { color: var(--accent); }
 
     return '<div class="page-head"><div><h1>患者</h1><div class="sub">在院 ' + stats.inHospital + ' 人 · 今日待办 ' + stats.todayTodo + ' · 逾期 ' + stats.overdue + '</div></div>' +
       '<div class="row"><button class="btn ghost" data-nav="pending">待入院 <span class="badge">' + app.pendingList().length + '</span></button>' +
-      '<button class="btn primary" data-act="new-intake">+ 新入院</button></div></div>' +
+      '<button class="btn plus" data-act="add-patient" aria-label="新增患者" title="新增患者">+</button></div></div>' +
       '<div class="row between" style="margin-bottom:8px"><div class="seg">' +
       '<button class="' + (app.state.listMode === 'cards' ? 'active' : '') + '" data-act="list-mode" data-value="cards">卡片</button>' +
       '<button class="' + (app.state.listMode === 'table' ? 'active' : '') + '" data-act="list-mode" data-value="table">表格</button></div>' +
@@ -2204,7 +2209,7 @@ a { color: var(--accent); }
     const list = app.pendingList();
     let body;
     if (!list.length) {
-      body = '<div class="empty"><h3>没有待入院草稿</h3><p>值班新收时先写「新入院」，复核后再入库。</p>' +
+      body = '<div class="empty"><h3>没有待入院草稿</h3><p>值班当天给所有新收病人写「新入院」；复核后标记老师、收进组。</p>' +
         '<button class="btn primary" data-act="new-intake">+ 新入院</button></div>';
     } else {
       body = '<div class="cards">' + list.map(function (it) {
@@ -2216,7 +2221,7 @@ a { color: var(--accent); }
           '<div class="pc-surgery">入院 ' + root.UI.fmtDate(it.adm.admissionDate) + ' · 创建 ' + root.UI.fmtDateTime(it.adm.createdAt) + '</div>' +
           '<div class="row" style="margin-top:4px">' +
           '<button class="btn small" data-act="edit-intake" data-id="' + esc(it.adm.id) + '">继续填写</button>' +
-          '<button class="btn small primary" data-act="promote" data-id="' + esc(it.adm.id) + '">入库</button>' +
+          '<button class="btn small primary" data-act="promote" data-id="' + esc(it.adm.id) + '">收进组</button>' +
           '<button class="btn small danger" data-act="delete-admission" data-id="' + esc(it.adm.id) + '">删除</button>' +
           '</div></div>';
       }).join('') + '</div>';
@@ -2281,7 +2286,7 @@ a { color: var(--accent); }
       root.UI.statusBadge(adm.status) + teacherBadge(app, adm) +
       '<span class="pc-tags">' + tagsHtml(app, p) + '</span></div>' +
       '<div class="detail-actions">' +
-      (adm.status === 'pending' ? '<button class="btn primary" data-act="promote" data-id="' + esc(adm.id) + '">入库</button>' : '') +
+      (adm.status === 'pending' ? '<button class="btn primary" data-act="promote" data-id="' + esc(adm.id) + '">收进组</button>' : '') +
       '<button class="btn" data-act="edit-admission" data-id="' + esc(adm.id) + '">编辑住院信息</button>' +
       '<button class="btn ghost" data-act="edit-intake" data-id="' + esc(adm.id) + '">编辑入院评估</button>' +
       (adm.status === 'admitted'
@@ -2357,7 +2362,7 @@ a { color: var(--accent); }
     ];
 
     return '<div class="page-head"><div><h1>' + title + '</h1><div class="sub">' +
-      (isAdmitted ? '修改后保存即可，入库状态不变' : '先保存草稿；复核后点「入库」才进主患者库') + '</div></div>' +
+      (isAdmitted ? '修改后保存即可，入库状态不变' : '先保存草稿；复核后标记老师、收进组才进主患者库') + '</div></div>' +
       '<button class="btn ghost" data-act="cancel-intake">取消</button></div>' +
       '<form id="intake-form" class="intake-form" autocomplete="off">' +
       '<section class="card"><h2>基本信息</h2>' +
@@ -2371,7 +2376,7 @@ a { color: var(--accent); }
       '<div class="field"><label>入院日期</label><input name="admissionDate" type="date" value="' + val(a.admissionDate) + '"></div>' +
       '<div class="field" style="grid-column:1/-1"><label>主诊断 *</label><input name="diagnosis" value="' + val(a.diagnosis) + '" placeholder="如 左膝骨关节炎"></div>' +
       '</div>' +
-      '<div class="form-note" style="margin-top:10px">手术日期、带教老师入库后在详情页补；没填手术日期不会排拔管/换药/拆线。</div>' +
+      '<div class="form-note" style="margin-top:10px">手术日期入库后在详情页补；带教老师在「收进组」时选择。没填手术日期不会排拔管/换药/拆线。</div>' +
       '</section>' +
       '<section class="card"><h2>现病史</h2><div class="field"><textarea name="presentIllness" placeholder="起病时间、加重时间、主要症状、诊疗经过…">' + val(i.presentIllness) + '</textarea></div></section>' +
       '<section class="card"><h2>既往史</h2><div class="field"><textarea name="pastHistory" placeholder="基础病、时间、用药、控制情况…">' + val(i.pastHistory) + '</textarea></div></section>' +
@@ -2419,7 +2424,6 @@ a { color: var(--accent); }
       '<section class="card"><h2>备注</h2><div class="field"><textarea name="intakeNotes" placeholder="其他需要记的">' + val(i.notes) + '</textarea></div></section>' +
       '<div class="form-actions">' +
       '<button type="button" class="btn primary" data-act="save-intake" data-promote="0">' + (isAdmitted ? '保存' : '保存草稿') + '</button>' +
-      (!isAdmitted ? '<button type="button" class="btn good" data-act="save-intake" data-promote="1">入库</button>' : '') +
       '<button type="button" class="btn ghost" data-act="cancel-intake">取消</button>' +
       '</div>' +
       '</form>';
@@ -2632,7 +2636,8 @@ a { color: var(--accent); }
         case 'save-intake': this.saveIntake(el.getAttribute('data-promote') === '1'); break;
         case 'edit-admission': this.openEditAdmission(adId); break;
         case 'save-admission': this.saveAdmission(adId); break;
-        case 'promote': this.promote(adId); break;
+        case 'add-patient': this.openAddPatient(); break;
+        case 'promote': this.openPromote(adId); break;
         case 'discharge': this.discharge(adId); break;
         case 'restore': this.restore(adId); break;
         case 'delete-admission': this.deleteAdmission(adId); break;
@@ -2730,7 +2735,6 @@ a { color: var(--accent); }
         '<div class="brand"><div class="brand-title">病人管理</div><div class="brand-sub">' +
         UI.fmtDate(this.state.today) + ' ' + UI.weekday(this.state.today) + '</div></div>' +
         '<nav class="nav">' + navHtml + '</nav>' +
-        '<div class="top-actions"><button class="btn primary" data-act="new-intake">+ 新入院</button></div>' +
         '</div></header>' +
         '<main>' + content + '</main>' +
         '<div class="version">' + UI.esc(root.APP_VERSION || 'dev') + ' · 本机数据</div>' +
@@ -2906,7 +2910,7 @@ a { color: var(--accent); }
       if (!v) return;
       if (!v.patient.name) { UI.toast('姓名必填'); return; }
       if (promote && (!v.admission.bed || !v.admission.diagnosis)) {
-        UI.toast('入库需要姓名、床号、主诊断'); return;
+        UI.toast('收进组需要姓名、床号、主诊断'); return;
       }
       const d = this.state.intake;
       const now = Store.nowISO();
@@ -2970,9 +2974,12 @@ a { color: var(--accent); }
       }
 
       this.state.intake = null;
+      const wasAdmitted = !!(existingAdm && existingAdm.status === 'admitted');
+      this.state.page = (promote || wasAdmitted) ? 'detail' : 'pending';
+      this.state.selectedId = admissionId;
       await this.reload();
-      UI.toast(promote ? '已入库' : '已保存草稿');
-      this.go('detail', admissionId);
+      UI.toast(promote ? '已收进组' : '已保存草稿');
+      root.scrollTo(0, 0);
     },
 
     // ---------- 编辑住院信息 ----------
@@ -3059,8 +3066,101 @@ a { color: var(--accent); }
       return true;
     },
 
-    // ---------- 待入院 / 状态 ----------
-    async promote(id) {
+    // ---------- 患者卡片（直接进患者栏，不写病史模板） ----------
+    admissionFormHtml(p, adm) {
+      const s = this.state.data.settings;
+      const a = adm || {};
+      const tags = (s.tags || []).map(function (t) {
+        const checked = (p.tags || []).indexOf(t.id) >= 0 ? ' checked' : '';
+        return '<label class="check" style="margin-right:10px"><input type="checkbox" name="tags" value="' + UI.esc(t.id) + '"' + checked + '>' + UI.esc(t.label) + '</label>';
+      }).join('');
+      const teacherOpts = '<option value="">未分配</option>' + (s.teachers || []).map(function (t) {
+        return '<option value="' + UI.esc(t.id) + '"' + (a.teacherId === t.id ? ' selected' : '') + '>' + UI.esc(t.name) + '</option>';
+      }).join('');
+
+      return '<form id="adm-form">' +
+        '<div class="grid2">' +
+        '<div class="field"><label>姓名 *</label><input name="name" value="' + UI.esc(p.name || '') + '"></div>' +
+        '<div class="field"><label>性别</label><select name="sex"><option value="">未填</option><option value="男"' + (p.sex === '男' ? ' selected' : '') + '>男</option><option value="女"' + (p.sex === '女' ? ' selected' : '') + '>女</option></select></div>' +
+        '<div class="field"><label>年龄</label><input name="age" type="number" inputmode="numeric" value="' + UI.esc(p.age != null ? p.age : '') + '"></div>' +
+        '<div class="field"><label>身高 cm</label><input name="height" type="number" inputmode="numeric" value="' + UI.esc(p.height != null ? p.height : '') + '"></div>' +
+        '<div class="field"><label>床号 *</label><input name="bed" value="' + UI.esc(a.bed || '') + '"></div>' +
+        '<div class="field"><label>入院日期</label><input name="admissionDate" type="date" value="' + UI.esc(a.admissionDate || '') + '"></div>' +
+        '<div class="field" style="grid-column:1/-1"><label>主诊断</label><input name="diagnosis" value="' + UI.esc(a.diagnosis || '') + '"></div>' +
+        '<div class="field"><label>手术名称</label><input name="surgeryName" value="' + UI.esc(a.surgeryName || '') + '"></div>' +
+        '<div class="field"><label>手术日期</label><input name="surgeryDate" type="date" value="' + UI.esc(a.surgeryDate || '') + '"></div>' +
+        '<div class="field" style="grid-column:1/-1"><label>带教老师</label><select name="teacherId">' + teacherOpts + '</select></div>' +
+        '<div class="field" style="grid-column:1/-1"><label>标签</label><div class="row">' + (tags || '<span class="faint small">设置里先添加标签</span>') + '</div></div>' +
+        '</div></form>';
+    },
+
+    openAddPatient() {
+      const p = {};
+      const adm = {
+        bed: '', admissionDate: this.state.today, diagnosis: '',
+        surgeryName: '', surgeryDate: '', teacherId: ''
+      };
+      const self = this;
+      UI.modal({
+        title: '新增患者',
+        body: this.admissionFormHtml(p, adm),
+        actions: [
+          { label: '取消', className: 'ghost' },
+          {
+            label: '保存', className: 'primary', onClick: async function (close) {
+              const ok = await self.saveNewPatient();
+              if (ok) close();
+            }
+          }
+        ]
+      });
+    },
+
+    async saveNewPatient() {
+      const form = document.getElementById('adm-form');
+      if (!form) return false;
+      const fd = new FormData(form);
+      const v = (k) => String(fd.get(k) == null ? '' : fd.get(k)).trim();
+      if (!v('name')) { UI.toast('姓名必填'); return false; }
+      if (!v('bed')) { UI.toast('床号必填'); return false; }
+      const now = Store.nowISO();
+      const patientId = Store.uid();
+      const admissionId = Store.uid();
+      const patient = {
+        id: patientId,
+        name: v('name'),
+        sex: v('sex'),
+        age: v('age') === '' ? '' : Number(v('age')),
+        height: v('height') === '' ? '' : Number(v('height')),
+        tags: fd.getAll('tags'),
+        createdAt: now,
+        updatedAt: now
+      };
+      const admission = {
+        id: admissionId,
+        patientId: patientId,
+        bed: v('bed'),
+        admissionDate: v('admissionDate'),
+        diagnosis: v('diagnosis'),
+        surgeryName: v('surgeryName'),
+        surgeryDate: v('surgeryDate'),
+        teacherId: v('teacherId'),
+        status: 'admitted',
+        intake: {},
+        bedHistory: [],
+        createdAt: now,
+        updatedAt: now
+      };
+      await Store.put('patients', patient);
+      await Store.put('admissions', admission);
+      await this.reload();
+      UI.toast('已添加患者');
+      this.go('detail', admissionId);
+      return true;
+    },
+
+    // ---------- 待入院 / 收进组 ----------
+    openPromote(id) {
       const adm = this.admission(id);
       if (!adm) return;
       const p = this.patient(adm.patientId) || {};
@@ -3069,12 +3169,52 @@ a { color: var(--accent); }
         this.openIntake(id);
         return;
       }
+      const s = this.state.data.settings;
+      const teachers = s.teachers || [];
+      if (!teachers.length) { UI.toast('先在设置里添加带教老师'); return; }
+      const current = adm.teacherId || teachers[0].id;
+      const opts = teachers.map(function (t) {
+        return '<option value="' + UI.esc(t.id) + '"' + (current === t.id ? ' selected' : '') + '>' + UI.esc(t.name) + '</option>';
+      }).join('');
+      const body = '<p class="small muted">把 <b>' + UI.esc(p.name) + '</b>（' + UI.esc(adm.bed) + '）收进哪个老师的组？</p>' +
+        '<div class="field"><label>带教老师 *</label><select id="promote-teacher">' + opts + '</select></div>';
+      const self = this;
+      UI.modal({
+        title: '收进组',
+        body: body,
+        actions: [
+          { label: '取消', className: 'ghost' },
+          {
+            label: '收进组', className: 'primary', onClick: async function (close) {
+              const sel = document.getElementById('promote-teacher');
+              const tid = sel ? sel.value : '';
+              if (!tid) { UI.toast('先选带教老师'); return; }
+              const ok = await self.promote(id, tid);
+              if (ok) close();
+            }
+          }
+        ]
+      });
+    },
+
+    async promote(id, teacherId) {
+      const adm = this.admission(id);
+      if (!adm) return false;
+      const p = this.patient(adm.patientId) || {};
+      if (!p.name || !adm.bed || !adm.diagnosis) {
+        UI.toast('先补姓名、床号、主诊断');
+        this.openIntake(id);
+        return false;
+      }
+      if (!teacherId) { this.openPromote(id); return false; }
+      adm.teacherId = teacherId;
       adm.status = 'admitted';
       adm.updatedAt = Store.nowISO();
       await Store.put('admissions', adm);
       await this.reload();
-      UI.toast('已入库，任务开始');
+      UI.toast('已收进组，任务开始');
       this.go('detail', id);
+      return true;
     },
 
     async discharge(id) {
