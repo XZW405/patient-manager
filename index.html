@@ -420,7 +420,7 @@ a { color: var(--accent); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.21.2312';</script>
+<script>window.APP_VERSION = 'v2026.10.21.2315';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -2153,7 +2153,7 @@ a { color: var(--accent); }
     if (!items.length) {
       listHtml = '<div class="empty"><h3>' + (total ? '没有符合筛选的病人' : '还没有在院病人') + '</h3>' +
         '<p>' + (total ? '换个筛选或点重置。' : '点右上角「+」录入患者卡片。') + '</p>' +
-        (total ? '<button class="btn ghost" data-act="filter-reset">重置筛选</button>' : '<button class="btn primary plus" data-act="add-patient" aria-label="新增患者" title="新增患者">+</button>') +
+        (total ? '<button class="btn ghost" data-act="filter-reset">重置筛选</button>' : '') +
         '</div>';
     } else if (app.state.listMode === 'table') {
       const rows = items.map(function (it) {
@@ -2209,8 +2209,7 @@ a { color: var(--accent); }
     const list = app.pendingList();
     let body;
     if (!list.length) {
-      body = '<div class="empty"><h3>没有待入院草稿</h3><p>值班当天给所有新收病人写「新入院」；复核后标记老师、收进组。</p>' +
-        '<button class="btn primary" data-act="new-intake">+ 新入院</button></div>';
+      body = '<div class="empty"><h3>没有待入院草稿</h3><p>值班当天点右上角「+ 新入院」；复核后标记老师、收进组。</p></div>';
     } else {
       body = '<div class="cards">' + list.map(function (it) {
         return '<div class="patient-card" style="cursor:default">' +
