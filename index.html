@@ -377,6 +377,16 @@ a { color: var(--accent); }
 /* 设置 */
 .settings { display: grid; gap: 12px; }
 .settings .card h2 { display: flex; align-items: center; justify-content: space-between; }
+.timeline-editor { display: grid; gap: 0; margin-top: 10px; border-top: 1px solid var(--border); }
+.timeline-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 9px 0; border-bottom: 1px dashed var(--border); }
+.timeline-row:last-of-type { border-bottom: 0; }
+.timeline-name { flex: 0 0 54px; font-size: 13px; font-weight: 750; }
+.timeline-rule { flex: 1 1 150px; min-width: 0; font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.timeline-days { width: 54px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); padding: 3px 5px; font-size: 14px; font-weight: 700; text-align: center; }
+.timeline-date { flex: 0 0 auto; font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 3px 8px; }
+.timeline-anchor .timeline-rule { color: var(--faint); }
+.timeline-end .timeline-rule { color: var(--faint); }
+.timeline-note { margin: 8px 0 0; line-height: 1.5; }
 .list-row { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
 .list-row:last-child { border-bottom: 0; }
 .list-row input[type="text"] { flex: 1; border: 1px solid var(--border); background: var(--card); border-radius: 9px; padding: 8px 10px; min-height: 38px; }
@@ -568,7 +578,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.22.2335';</script>
+<script>window.APP_VERSION = 'v2026.10.23.0006';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -715,6 +725,36 @@ button.date-row:active { transform: scale(.997); }
 
   function dressingLabel(n) {
     return '换药' + cnNumber(n);
+  }
+
+  // 每一次换药自己的间隔：换药一从拔管日算，换药二从换药一算，以此类推。
+  function dressingGapFor(settings, occurrence) {
+    const s = Object.assign({}, DEFAULTS, settings || {});
+    const list = Array.isArray(s.dressingIntervals) ? s.dressingIntervals : [];
+    const n = Math.max(1, Number(occurrence) || 1);
+    const configured = Number(list[n - 1]);
+    if (configured > 0) return configured;
+    const fallback = n <= 1 ? s.firstDressingInterval : s.dressingInterval;
+    const value = Number(fallback);
+    if (value > 0) return value;
+    return n <= 1 ? DEFAULTS.firstDressingInterval : DEFAULTS.dressingInterval;
+  }
+
+  // 设置页的默认时间轴：按当前间隔一直算到拆线日之前。
+  function dressingTimeline(settings) {
+    const s = Object.assign({}, DEFAULTS, settings || {});
+    const stitch = Number(s.stitchOffset);
+    const drain = Number(s.drainOffset);
+    if (!(stitch > 0)) return [];
+    let day = Number.isFinite(drain) ? drain : DEFAULTS.drainOffset;
+    const out = [];
+    for (let occurrence = 1; occurrence <= 100; occurrence += 1) {
+      const gap = dressingGapFor(s, occurrence);
+      day += gap;
+      if (day >= stitch) break;
+      out.push({ occurrence: occurrence, gap: gap, day: day });
+    }
+    return out;
   }
 
   // ---------- 事件 ----------
@@ -1019,84 +1059,102 @@ button.date-row:active { transform: scale(.997); }
       }
     }
 
-    // 换药：生成从下一次一直到拆线/出院终点的完整剩余序列。
-    // 换药一 = 拔管日 + firstDressingInterval；换药二 = 换药一 + dressingInterval，以此类推。
+    // 换药：从拔管后按默认时间轴生成完整剩余序列。
+    // 换药一从拔管日算，换药二从换药一算；每一次的间隔都可以在设置里单独调。
     if (drainDate && stitchDue && !stitchEnded) {
       const end = dischargeDate && dischargeDate < stitchDue ? dischargeDate : stitchDue;
-      const firstDue = addDays(drainDate, s.firstDressingInterval);
-      if (firstDue && firstDue < end) {
-        const evs = allEvents.filter(function (e) { return e.taskType === 'dressing'; });
-        const term = terminalEvent(evs);
-        const anchor = latestAction(evs, ['done', 'senior', 'nonplanned']);
-        const stopped = term && term.action === 'not_needed' &&
-          (!anchor || eventCmp(term, anchor) > 0);
-        if (!stopped) {
-          const completedCount = evs.filter(function (e) {
-            return e.action === 'done' || e.action === 'senior' || e.action === 'nonplanned';
-          }).length;
-          const plan = admission.dressingPlan && Number(admission.dressingPlan.startOccurrence) > 0
-            ? admission.dressingPlan : null;
-          const legacyPlan = plan ? null : taskPlan(admission, 'dressing');
-          let planStart = plan ? Number(plan.startOccurrence) : 0;
-          let planDueDate = plan && validDate(plan.dueDate) ? plan.dueDate : '';
-          let planIntervalDays = plan && Number(plan.interval) > 0 ? Number(plan.interval) : s.dressingInterval;
+      const firstDue = addDays(drainDate, dressingGapFor(s, 1));
+      const evs = allEvents.filter(function (e) { return e.taskType === 'dressing'; });
+      const term = terminalEvent(evs);
+      const anchor = latestAction(evs, ['done', 'senior', 'nonplanned']);
+      const stopped = term && term.action === 'not_needed' &&
+        (!anchor || eventCmp(term, anchor) > 0);
+      if (!stopped) {
+        // 显式记录的第 n 次；旧数据没有 occurrence 时按时间顺序补成 1、2、3…
+        const doneEvs = sortEvents(evs.filter(function (e) {
+          return e.action === 'done' || e.action === 'senior' || e.action === 'nonplanned';
+        }));
+        let maxDone = 0;
+        doneEvs.forEach(function (e) {
+          const occ = Number(e.occurrence);
+          maxDone = occ > 0 ? Math.max(maxDone, occ) : maxDone + 1;
+        });
 
-          let virtualSkipped = 0;
-          let baseDue = anchor ? addDays(anchor.date, s.dressingInterval) : firstDue;
-          let guard = 0;
-          while (baseDue && beforeStart(baseDue) && guard < 100) {
-            skippedBeforeStart += 1;
-            virtualSkipped += 1;
-            baseDue = addDays(baseDue, s.dressingInterval);
-            guard += 1;
-          }
-          let occurrence = completedCount + virtualSkipped + 1;
-          if (legacyPlan) {
-            planStart = occurrence;
-            planIntervalDays = Number(legacyPlan.interval) > 0 ? Number(legacyPlan.interval) : s.dressingInterval;
-            // 设置后如果已经做过一次，日期锚点失效，但循环天数继续生效。
-            planDueDate = !planHasLaterEvent(legacyPlan, evs) && validDate(legacyPlan.dueDate) ? legacyPlan.dueDate : '';
-          }
-          if (anchor) {
-            const baseInterval = planStart && planStart <= occurrence ? planIntervalDays : s.dressingInterval;
-            baseDue = addDays(anchor.date, baseInterval);
-          }
-
-          let due = baseDue ? applyDefer(baseDue, evs) : '';
-          let idx = occurrence;
-          guard = 0;
-          while (due && due < end && guard < 100) {
-            if (idx === planStart && planDueDate && completedCount < planStart) {
-              due = planDueDate;
-            }
-            if (due && due < end) {
-              const cycle = idx >= planStart && planIntervalDays > 0 ? planIntervalDays : s.dressingInterval;
-              const type = idx === occurrence ? 'dressing' : 'dressing:' + idx;
-              tasks.push(makeTask(admission, type, dressingLabel(idx), 'dressing', due, dueStatus(due, t),
-                ['done', 'defer', 'senior', 'not_needed'], {
-                  occurrence: idx,
-                  kind: 'dressing',
-                  planKey: 'dressing',
-                  firstDue: firstDue,
-                  anchorDate: anchor ? anchor.date : '',
-                  interval: cycle
-                }, t));
-              if (!nextDressingDate) nextDressingDate = due;
-            }
-            const cycle = idx >= planStart && planIntervalDays > 0 ? planIntervalDays : s.dressingInterval;
-            due = addDays(due, cycle);
-            idx += 1;
-            guard += 1;
-          }
+        const plan = admission.dressingPlan && Number(admission.dressingPlan.startOccurrence) > 0
+          ? admission.dressingPlan : null;
+        const legacyPlan = plan ? null : taskPlan(admission, 'dressing');
+        let planStart = plan ? Number(plan.startOccurrence) : 0;
+        let planDueDate = plan && validDate(plan.dueDate) ? plan.dueDate : '';
+        let planIntervalDays = plan ? planInterval(plan, s.dressingInterval) : 0;
+        const legacyPlanPending = !!legacyPlan;
+        if (legacyPlan) {
+          planIntervalDays = planInterval(legacyPlan, s.dressingInterval);
+          // 旧版单患者排期没有 occurrence，补录跳过后落到当前第一次。
+          planStart = 0;
+          planDueDate = !planHasLaterEvent(legacyPlan, evs) && validDate(legacyPlan.dueDate) ? legacyPlan.dueDate : '';
         }
 
-        evs.forEach(function (e) {
-          if (e.date === t && (e.action === 'done' || e.action === 'senior' || e.action === 'nonplanned')) {
-            const label = e.action === 'nonplanned' ? '非计划换药' : '换药';
-            completedToday.push(completion(admission, 'dressing', label, e, { occurrence: e.occurrence || null }));
+        let idx = maxDone + 1;
+        let due = '';
+        if (maxDone > 0 && anchor) {
+          const gap = planStart && idx >= planStart ? planIntervalDays : dressingGapFor(s, idx);
+          due = addDays(anchor.date, gap);
+        } else {
+          idx = 1;
+          due = firstDue;
+        }
+
+        // 补录：基线之前的换药跳过，但序号继续前进。
+        // 新版的单患者日期到了它自己的 occurrence 时直接覆盖。
+        if (!legacyPlanPending && planStart && idx === planStart && planDueDate) due = planDueDate;
+        let guard = 0;
+        while (due && beforeStart(due) && guard < 100) {
+          skippedBeforeStart += 1;
+          idx += 1;
+          const gap = planStart && idx >= planStart ? planIntervalDays : dressingGapFor(s, idx);
+          due = addDays(due, gap);
+          if (!legacyPlanPending && planStart && idx === planStart && planDueDate) due = planDueDate;
+          guard += 1;
+        }
+        if (legacyPlanPending) {
+          planStart = idx;
+          if (planDueDate) due = planDueDate;
+          else if (anchor) due = addDays(anchor.date, planIntervalDays);
+        }
+
+        const firstIdx = idx;
+        let currentDue = due ? applyDefer(due, evs) : '';
+        guard = 0;
+        while (currentDue && currentDue < end && guard < 100) {
+          if (idx === planStart && planDueDate && maxDone < planStart) currentDue = planDueDate;
+          if (currentDue && currentDue < end) {
+            const nextGap = planStart && idx + 1 >= planStart ? planIntervalDays : dressingGapFor(s, idx + 1);
+            tasks.push(makeTask(admission, idx === firstIdx ? 'dressing' : 'dressing:' + idx,
+              dressingLabel(idx), 'dressing', currentDue, dueStatus(currentDue, t),
+              ['done', 'defer', 'senior', 'not_needed'], {
+                occurrence: idx,
+                kind: 'dressing',
+                planKey: 'dressing',
+                firstDue: firstDue,
+                anchorDate: anchor ? anchor.date : '',
+                interval: nextGap
+              }, t));
+            if (!nextDressingDate) nextDressingDate = currentDue;
           }
-        });
+          const nextGap = planStart && idx + 1 >= planStart ? planIntervalDays : dressingGapFor(s, idx + 1);
+          currentDue = addDays(currentDue, nextGap);
+          idx += 1;
+          guard += 1;
+        }
       }
+
+      evs.forEach(function (e) {
+        if (e.date === t && (e.action === 'done' || e.action === 'senior' || e.action === 'nonplanned')) {
+          const occ = Number(e.occurrence);
+          const label = e.action === 'nonplanned' ? '非计划换药' : (occ > 0 ? dressingLabel(occ) : '换药');
+          completedToday.push(completion(admission, 'dressing', label, e, { occurrence: e.occurrence || null }));
+        }
+      });
     }
 
     // 出院：手动日期为终点；出院任务本身也进时间轴。
@@ -1630,6 +1688,8 @@ button.date-row:active { transform: scale(.997); }
     CATEGORY_ORDER: CATEGORY_ORDER,
     CATEGORY_LABELS: CATEGORY_LABELS,
     taskOrderFor: taskOrderFor,
+    dressingGapFor: dressingGapFor,
+    dressingTimeline: dressingTimeline,
     parseYMD: parseYMD,
     toYMD: toYMD,
     addDays: addDays,
@@ -2013,6 +2073,7 @@ button.date-row:active { transform: scale(.997); }
       drainOffset: 1,
       firstDressingInterval: 2,
       dressingInterval: 2,
+      dressingIntervals: [],
       stitchOffset: 14,
       taskOrder: ['surgery_pending', 'preop', 'surgery', 'drain', 'dressing', 'stitch', 'discharge', 'other'],
       teachers: [
@@ -2488,19 +2549,19 @@ button.date-row:active { transform: scale(.997); }
   }
 
   function taskRow(app, adm, t) {
-    const futureOccurrence = /^dressing:/.test(t.type);
-    const canAct = t.status !== 'done' && t.status !== 'not_needed' && t.type !== 'surgery_pending' && !futureOccurrence;
+    const canAct = t.status !== 'done' && t.status !== 'not_needed';
+    const pendingSurgery = t.type === 'surgery_pending';
     const rel = t.relative || root.Engine.relativeDayLabel(t.dueDate, app.state.today);
-    const interval = '';
-    const planTitle = t.type === 'surgery_pending' ? '点这里设置手术日期' : '点这里改下一次日期 / 循环天数';
+    const planTitle = pendingSurgery ? '点这里设置手术日期' : '点这里改下一次日期 / 循环天数';
+    const act = pendingSurgery ? 'task-plan' : 'tasks';
     return '<div class="task-row ' + esc(t.status) + (t.type === 'discharge' ? ' discharge' : '') + '">' +
       '<button class="task-main" data-act="task-plan" data-admission="' + esc(adm.id) + '" data-type="' + esc(t.type) + '" title="' + planTitle + '">' +
-      '<span class="task-name">' + esc(t.label) + interval + '</span>' +
+      '<span class="task-name">' + esc(t.label) + '</span>' +
       '<span class="task-rel">' + esc(rel) + '</span>' +
       '</button>' +
       '<div class="task-actions">' +
       (t.freeTodoId ? '<button class="icon-btn" data-act="free-todo" data-id="' + esc(t.freeTodoId) + '" title="编辑这条待办">✎</button>' : '') +
-      (canAct ? '<button class="btn small soft" data-act="tasks" data-admission="' + esc(adm.id) + '">处理</button>' : '') +
+      (canAct ? '<button class="btn small soft" data-act="' + act + '" data-admission="' + esc(adm.id) + '" data-type="' + esc(t.type) + '">处理</button>' : '') +
       '</div></div>';
   }
 
@@ -3046,16 +3107,41 @@ button.date-row:active { transform: scale(.997); }
         '<button type="button" class="btn small ghost" data-act="task-order-down"' + (i === arr.length - 1 ? ' disabled' : '') + '>↓</button></div>';
     }).join('');
 
+    const dLabel = function (n) {
+      const v = Number(n) || 0;
+      return v === 0 ? 'D0' : (v > 0 ? 'D+' + v : 'D' + v);
+    };
+    const dressingSteps = root.Engine.dressingTimeline(s);
+    const dressingRows = dressingSteps.map(function (step, i) {
+      const cn = root.Engine.cnNumber(step.occurrence);
+      const prev = i === 0 ? '拔管后' : '距换药' + root.Engine.cnNumber(step.occurrence - 1);
+      return '<div class="timeline-row">' +
+        '<span class="timeline-name">换药' + cn + '</span>' +
+        '<span class="timeline-rule">' + esc(prev) + ' <input class="timeline-days dressing-gap" data-occurrence="' + step.occurrence + '" type="number" min="1" step="1" inputmode="numeric" value="' + esc(step.gap) + '"> 天</span>' +
+        '<span class="timeline-date">D+' + esc(step.day) + '</span></div>';
+    }).join('');
+    const timelineRows =
+      '<div class="timeline-row"><span class="timeline-name">备术</span>' +
+      '<span class="timeline-rule">术前 <input class="timeline-days" name="preopOffset" type="number" min="0" step="1" inputmode="numeric" value="' + esc(s.preopOffset != null ? s.preopOffset : 1) + '"> 天</span>' +
+      '<span class="timeline-date">' + dLabel(-(s.preopOffset != null ? s.preopOffset : 1)) + '</span></div>' +
+      '<div class="timeline-row timeline-anchor"><span class="timeline-name">手术</span>' +
+      '<span class="timeline-rule">手术日 · 锚点</span><span class="timeline-date">D0</span></div>' +
+      '<div class="timeline-row"><span class="timeline-name">拔管</span>' +
+      '<span class="timeline-rule">术后 <input class="timeline-days" name="drainOffset" type="number" min="0" step="1" inputmode="numeric" value="' + esc(s.drainOffset) + '"> 天</span>' +
+      '<span class="timeline-date">' + dLabel(s.drainOffset) + '</span></div>' +
+      dressingRows +
+      '<div class="timeline-row"><span class="timeline-name">拆线</span>' +
+      '<span class="timeline-rule">术后 <input class="timeline-days" name="stitchOffset" type="number" min="0" step="1" inputmode="numeric" value="' + esc(s.stitchOffset) + '"> 天</span>' +
+      '<span class="timeline-date">' + dLabel(s.stitchOffset) + '</span></div>' +
+      '<div class="timeline-row timeline-end"><span class="timeline-name">出院</span>' +
+      '<span class="timeline-rule">患者单独安排 · 终点</span><span class="timeline-date">终点</span></div>' +
+      '<p class="small muted timeline-note">按手术日 D0 排。当前会生成 <b>' + dressingSteps.length + '</b> 次换药；每一次都可以单独改间隔。实际出院日更早时，以出院日为终点。</p>';
+
     return '<div class="page-head"><div><h1>设置</h1><div class="sub">设备 ' + esc((meta.deviceId || '').slice(0, 8)) + ' · 上次备份 ' + esc(meta.lastBackupAt ? root.UI.fmtDateTime(meta.lastBackupAt) : '从未') + '</div></div></div>' +
       '<div class="settings">' +
-      '<section class="card"><h2>任务间隔</h2><form id="settings-form">' +
-      '<div class="grid2">' +
-      '<div class="field"><label>备术（术前第几天）</label><input name="preopOffset" type="number" min="0" value="' + esc(s.preopOffset != null ? s.preopOffset : 1) + '"></div>' +
-      '<div class="field"><label>拔管（术后第几天）</label><input name="drainOffset" type="number" min="0" value="' + esc(s.drainOffset) + '"></div>' +
-      '<div class="field"><label>拔管后首次换药间隔</label><input name="firstDressingInterval" type="number" min="0" value="' + esc(s.firstDressingInterval) + '"></div>' +
-      '<div class="field"><label>换药间隔</label><input name="dressingInterval" type="number" min="1" value="' + esc(s.dressingInterval) + '"></div>' +
-      '<div class="field"><label>拆线（术后第几天）</label><input name="stitchOffset" type="number" min="0" value="' + esc(s.stitchOffset) + '"></div>' +
-      '</div>' +
+      '<section class="card"><h2>默认任务时间轴</h2><form id="settings-form">' +
+      '<p class="small muted">完整时间轴：从备术到出院。换药一从拔管日算，换药二从换药一算，以此类推。</p>' +
+      '<div class="timeline-editor">' + timelineRows + '</div>' +
       '<h2 style="margin-top:16px">带教老师</h2><div id="teacher-list">' + teacherRows + '</div>' +
       '<button type="button" class="btn small" data-act="add-teacher">+ 加老师</button>' +
       '<h2 style="margin-top:16px">标签</h2><div id="tag-list">' + tagRows + '</div>' +
@@ -3340,7 +3426,7 @@ button.date-row:active { transform: scale(.997); }
         case 'restore': this.restore(adId); break;
         case 'delete-admission': this.deleteAdmission(adId); break;
         case 'detail': this.go('detail', adId); break;
-        case 'tasks': this.openTasks(adId); break;
+        case 'tasks': this.openTasks(adId, el.getAttribute('data-type') || ''); break;
         case 'task-action': this.doTaskAction(adId, el); break;
         case 'task-plan': this.openTaskPlan(adId, el.getAttribute('data-type')); break;
         case 'free-todo': this.openFreeTodo(el.getAttribute('data-admission') || '', el.getAttribute('data-id') || ''); break;
@@ -4353,12 +4439,17 @@ button.date-row:active { transform: scale(.997); }
     },
 
     // ---------- 任务动作 ----------
-    openTasks(admissionId) {
+    openTasks(admissionId, onlyType) {
       const ctx = this.context(admissionId);
       if (!ctx) { UI.toast('找不到患者'); return; }
-      const actionable = ctx.tasks.filter((t) => (t.status === 'pending' || t.status === 'overdue' || t.status === 'upcoming') && !/^dressing:/.test(t.type));
+      const actionable = ctx.tasks.filter((t) => {
+        if (t.status !== 'pending' && t.status !== 'overdue' && t.status !== 'upcoming') return false;
+        return !onlyType || t.type === onlyType;
+      });
       if (!actionable.length) { UI.toast('没有可处理的任务'); return; }
-      const self = this;
+      const title = onlyType && actionable.length === 1
+        ? '处理待办 · ' + actionable[0].label
+        : '处理待办 · ' + ctx.adm.bed + ' ' + ctx.patient.name;
       const body = '<div class="grid2">' +
         '<div class="field"><label>操作日期（补录可改）</label><input id="task-date" type="date" value="' + UI.esc(this.state.today) + '"></div>' +
         '<div class="field"><label>备注（可选）</label><input id="task-note" placeholder="如上级姓名 / 渗血"></div>' +
@@ -4377,7 +4468,7 @@ button.date-row:active { transform: scale(.997); }
         }).join('') + '</div>' +
         '<div style="margin-top:10px"><button class="btn small ghost" data-act="history" data-id="' + UI.esc(admissionId) + '">编辑任务历史</button></div>';
 
-      UI.sheet({ title: '处理待办 · ' + ctx.adm.bed + ' ' + ctx.patient.name, body: body, actions: [{ label: '关闭', className: 'ghost' }] });
+      UI.sheet({ title: title, body: body, actions: [{ label: '关闭', className: 'ghost' }] });
     },
 
     openTaskPlan(admissionId, type) {
@@ -4833,11 +4924,24 @@ button.date-row:active { transform: scale(.997); }
       if (!form) return;
       const fd = new FormData(form);
       const s = Object.assign({}, this.state.data.settings);
-      s.preopOffset = Number(fd.get('preopOffset') || 1);
-      s.drainOffset = Number(fd.get('drainOffset') || 1);
-      s.firstDressingInterval = Number(fd.get('firstDressingInterval') || 2);
-      s.dressingInterval = Number(fd.get('dressingInterval') || 2);
-      s.stitchOffset = Number(fd.get('stitchOffset') || 14);
+      const days = (v, fallback) => {
+        const n = Number(v);
+        return Number.isFinite(n) && n >= 0 ? Math.round(n) : fallback;
+      };
+      s.preopOffset = days(fd.get('preopOffset'), 1);
+      s.drainOffset = days(fd.get('drainOffset'), 1);
+      s.stitchOffset = days(fd.get('stitchOffset'), 14);
+      const gaps = Array.from(document.querySelectorAll('.dressing-gap')).map((input) => {
+        const n = Number(input.value);
+        return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+      });
+      if (gaps.length) {
+        s.dressingIntervals = gaps;
+        const firstGap = gaps.find((n) => n > 0) || s.firstDressingInterval || 2;
+        const nextGap = gaps.slice(1).find((n) => n > 0) || firstGap;
+        s.firstDressingInterval = firstGap;
+        s.dressingInterval = nextGap;
+      }
       s.cardFields = {
         teacher: fd.get('cardTeacher') === 'on',
         tags: fd.get('cardTags') === 'on',

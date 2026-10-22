@@ -1,5 +1,5 @@
 /* 病人管理系统 - Service Worker */
-const CACHE = 'patient-manager-v2026.10.22.2335';
+const CACHE = 'patient-manager-v2026.10.23.0006';
 const ASSETS = ['./', './index.html', './sw.js'];
 
 self.addEventListener('install', function (event) {
