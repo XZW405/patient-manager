@@ -578,7 +578,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.23.0006';</script>
+<script>window.APP_VERSION = 'v2026.10.23.0032';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -635,7 +635,8 @@ button.date-row:active { transform: scale(.997); }
     senior: '上级处理',
     defer: '明天再做',
     not_needed: '不再需要',
-    nonplanned: '非计划换药'
+    nonplanned: '非计划换药',
+    revoked: '撤销处理'
   };
 
   const CATEGORY_ORDER = ['overdue', 'surgery_pending', 'preop', 'surgery', 'drain', 'dressing', 'stitch', 'discharge', 'other', 'free'];
@@ -891,13 +892,14 @@ button.date-row:active { transform: scale(.997); }
     let dressingNo = 0;
     return sortEvents(evs).map(function (e) {
       let label = TASK_LABELS[e.taskType] || freeMap[e.taskType] || '待办';
-      if (e.taskType === 'dressing' &&
-        (e.action === 'done' || e.action === 'senior' || e.action === 'nonplanned')) {
+      if (e.taskType === 'dressing') {
         const occurrence = Number(e.occurrence);
         if (occurrence > 0) {
-          dressingNo = Math.max(dressingNo, occurrence);
           label = dressingLabel(occurrence);
-        } else {
+          if (e.action === 'done' || e.action === 'senior' || e.action === 'nonplanned') {
+            dressingNo = Math.max(dressingNo, occurrence);
+          }
+        } else if (e.action === 'done' || e.action === 'senior' || e.action === 'nonplanned') {
           dressingNo += 1;
           label = dressingLabel(dressingNo);
         }
@@ -980,7 +982,7 @@ button.date-row:active { transform: scale(.997); }
         const manual = !!(plan && validDate(plan.dueDate) && !planHasLaterEvent(plan, preopEvents));
         let due = planDue(plan, preopEvents, preopDue);
         due = applyDefer(due, preopEvents);
-        if (beforeStart(due) && !manual) {
+        if (beforeStart(due) && !manual && !preopEvents.length) {
           skippedBeforeStart += 1;
         } else {
           const status = dueStatus(due, t);
@@ -1016,7 +1018,7 @@ button.date-row:active { transform: scale(.997); }
         const manual = !!(plan && validDate(plan.dueDate) && !planHasLaterEvent(plan, evs));
         let due = planDue(plan, evs, drainDue);
         due = applyDefer(due, evs);
-        if (beforeStart(due) && !manual) {
+        if (beforeStart(due) && !manual && !evs.length) {
           skippedBeforeStart += 1;
           drainDate = due;
         } else if (!(dischargeDate && due > dischargeDate)) {
@@ -1049,7 +1051,7 @@ button.date-row:active { transform: scale(.997); }
         const manual = !!(plan && validDate(plan.dueDate) && !planHasLaterEvent(plan, evs));
         let due = planDue(plan, evs, stitchDue);
         due = applyDefer(due, evs);
-        if (beforeStart(due) && !manual) {
+        if (beforeStart(due) && !manual && !evs.length) {
           skippedBeforeStart += 1;
           stitchEnded = true;
         } else {
@@ -1108,7 +1110,7 @@ button.date-row:active { transform: scale(.997); }
         // 新版的单患者日期到了它自己的 occurrence 时直接覆盖。
         if (!legacyPlanPending && planStart && idx === planStart && planDueDate) due = planDueDate;
         let guard = 0;
-        while (due && beforeStart(due) && guard < 100) {
+        while (due && !evs.length && beforeStart(due) && guard < 100) {
           skippedBeforeStart += 1;
           idx += 1;
           const gap = planStart && idx >= planStart ? planIntervalDays : dressingGapFor(s, idx);
@@ -3494,12 +3496,7 @@ button.date-row:active { transform: scale(.997); }
         case 'remove-surgery': this.removeRow(el); break;
         case 'task-order-up': this.moveTaskOrder(el, -1); break;
         case 'task-order-down': this.moveTaskOrder(el, 1); break;
-        case 'clear-surgery-date': {
-          const form = el.closest('form');
-          const date = form && form.querySelector('[name="surgeryDate"]');
-          if (date) { date.value = ''; date.focus(); }
-          break;
-        }
+        case 'clear-surgery-date': this.setSurgeryPending(el); break;
         case 'backup-export': this.exportBackup(); break;
         case 'backup-import': this.importBackup(); break;
         case 'sync-export': this.exportSync(); break;
@@ -3990,7 +3987,7 @@ button.date-row:active { transform: scale(.997); }
         '<div class="field" style="grid-column:1/-1"><label>主诊断 *</label><input name="diagnosis" value="' + UI.esc(adm.diagnosis || '') + '"></div>' +
         this.quickPickHtml(true) +
         '<div class="field"><label>手术名称</label><input name="surgeryName" value="' + UI.esc(adm.surgeryName || '') + '"></div>' +
-        '<div class="field"><label>手术日期</label><div class="date-clear"><input name="surgeryDate" type="date" value="' + UI.esc(adm.surgeryDate || '') + '"><button type="button" class="btn small ghost" data-act="clear-surgery-date">待定</button></div></div>' +
+        '<div class="field"><label>手术日期</label><div class="date-clear"><input name="surgeryDate" type="date" value="' + UI.esc(adm.surgeryDate || '') + '"><button type="button" class="btn small ghost" data-act="clear-surgery-date" data-admission="' + UI.esc(adm.id) + '" title="清空手术日期并进入排术">待定</button></div></div>' +
         '<div class="field" style="grid-column:1/-1"><label>备注</label><textarea name="notes" placeholder="如 糖尿病、抗凝药、家属联系方式…">' + UI.esc(p.notes || '') + '</textarea></div>' +
         '<div class="field" style="grid-column:1/-1"><label>带教老师</label>' + this.teacherPickHtml(adm.teacherId || '', true) + '</div>' +
         '<div class="field" style="grid-column:1/-1"><label>标签</label><div class="row">' + (tags || '<span class="faint small">设置里先添加标签</span>') + '</div></div>' +
@@ -4010,6 +4007,30 @@ button.date-row:active { transform: scale(.997); }
           }
         ]
       });
+    },
+
+    async setSurgeryPending(el) {
+      const form = el.closest('form');
+      const input = form && form.querySelector('[name="surgeryDate"]');
+      if (!input) return;
+      input.value = '';
+      const admissionId = el.getAttribute('data-admission') || '';
+      if (!admissionId) {
+        el.textContent = '已待定';
+        UI.toast('已清空手术日期；保存后进入排术');
+        return;
+      }
+      const adm = this.admission(admissionId);
+      if (!adm) return;
+      const now = Store.nowISO();
+      adm.surgeryDate = '';
+      adm.surgeryDateChangedAt = now;
+      adm.updatedAt = now;
+      await Store.put('admissions', adm);
+      await this.reload();
+      const backdrop = el.closest('.modal-backdrop');
+      if (backdrop) backdrop.remove();
+      UI.toast(adm.status === 'admitted' ? '已设为待定，已进入排术' : '已清空手术日期');
     },
 
     async saveAdmission(id) {
@@ -4729,7 +4750,7 @@ button.date-row:active { transform: scale(.997); }
       const ctx = this.context(adm.id);
       const item = ctx ? ctx.res.history.find((h) => (h.eventId || h.id) === ev.id) : null;
       document.querySelectorAll('.sheet-backdrop').forEach((x) => x.remove());
-      const opts = ['done', 'senior', 'nonplanned', 'defer', 'not_needed'].map((a) =>
+      const opts = ['done', 'senior', 'nonplanned', 'defer', 'not_needed', 'revoked'].map((a) =>
         '<option value="' + a + '"' + (ev.action === a ? ' selected' : '') + '>' + UI.esc(Engine.ACTION_LABELS[a] || a) + '</option>').join('');
       const body = '<form id="event-form">' +
         '<p class="small muted">' + esc(adm.bed || '') + ' ' + esc((this.patient(adm.patientId) || {}).name || '') + ' · ' + esc(item ? item.label : Engine.TASK_LABELS[ev.taskType] || '待办') + '</p>' +
@@ -4740,11 +4761,53 @@ button.date-row:active { transform: scale(.997); }
         '<div class="field"><label>备注</label><input id="event-note" value="' + esc(ev.note || '') + '"></div>' +
         '</form>';
       const self = this;
+      const clearFreeDone = async function () {
+        if (!ev.sourceFreeTodoId) return;
+        const src = (self.state.data.freeTodos || []).find((x) => x.id === ev.sourceFreeTodoId);
+        if (!src) return;
+        src.doneAt = '';
+        src.updatedAt = Store.nowISO();
+        await Store.put('freeTodos', src);
+      };
+      const undo = async function (close) {
+        const ok = await UI.confirm('撤销这次处理？任务会回到待办，历史保留为「撤销处理」。', { okLabel: '撤销处理' });
+        if (!ok) return;
+        ev.revokedFrom = ev.action !== 'revoked' ? ev.action : (ev.revokedFrom || 'done');
+        ev.action = 'revoked';
+        ev.updatedAt = Store.nowISO();
+        await Store.put('events', ev);
+        await clearFreeDone();
+        await self.reload();
+        close();
+        UI.toast('已撤销处理，任务回到待办');
+      };
+      const redo = async function (close) {
+        const prev = ev.revokedFrom || 'done';
+        ev.action = prev;
+        ev.revokedFrom = '';
+        ev.updatedAt = Store.nowISO();
+        await Store.put('events', ev);
+        if (ev.sourceFreeTodoId) {
+          const src = (self.state.data.freeTodos || []).find((x) => x.id === ev.sourceFreeTodoId);
+          if (src) {
+            src.doneAt = (prev === 'done' || prev === 'senior' || prev === 'nonplanned') ? Store.nowISO() : '';
+            src.updatedAt = Store.nowISO();
+            await Store.put('freeTodos', src);
+          }
+        }
+        await self.reload();
+        close();
+        UI.toast('已恢复处理');
+      };
+      const undoAction = ev.action === 'revoked'
+        ? { label: '恢复处理', className: 'good', onClick: redo }
+        : { label: '撤销处理', className: 'ghost', onClick: undo };
       UI.modal({
         title: '编辑任务历史',
         body: body,
         actions: [
           { label: '取消', className: 'ghost' },
+          undoAction,
           {
             label: '删除', className: 'danger', onClick: async function (close) {
               const ok = await UI.confirm('删除这条历史？排期会按剩余记录重算。', { okLabel: '删除', danger: true });
@@ -4771,8 +4834,11 @@ button.date-row:active { transform: scale(.997); }
               const a = document.getElementById('event-action');
               const n = document.getElementById('event-note');
               if (!d || !Engine.validDate(d.value)) { UI.toast('日期无效'); return; }
+              const beforeAction = ev.action;
               ev.date = d.value;
               ev.action = a ? a.value : ev.action;
+              if (ev.action === 'revoked' && beforeAction !== 'revoked') ev.revokedFrom = beforeAction;
+              if (ev.action !== 'revoked') ev.revokedFrom = '';
               ev.note = n ? n.value.trim() : '';
               ev.updatedAt = Store.nowISO();
               await Store.put('events', ev);
