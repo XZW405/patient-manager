@@ -508,6 +508,16 @@ button.date-row:active { transform: scale(.997); }
 @media (max-width: 520px) {
   .quick-label { min-width: 100%; margin-bottom: -2px; }
 }
+
+/* 患者列表状态筛选 / 出院卡片 */
+.chip-divider { width: 1px; height: 24px; background: var(--border); margin: 0 2px; align-self: center; }
+.patient-card.discharged { opacity: .62; filter: grayscale(.4); }
+.patient-card.discharged .pc-name, .patient-card.discharged .pc-diag { color: var(--muted); }
+.bulk-archive {
+  margin: 16px 0 4px; padding: 14px; display: grid; gap: 6px; text-align: center;
+  background: var(--card); border: 1px dashed var(--border); border-radius: var(--radius);
+}
+.bulk-archive .btn { width: 100%; }
 </style>
 </head>
 <body>
@@ -515,7 +525,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.22.0151';</script>
+<script>window.APP_VERSION = 'v2026.10.22.2113';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -1311,6 +1321,11 @@ button.date-row:active { transform: scale(.997); }
           return false;
         }
       }
+      if (f.status === 'in') {
+        if (a.dischargeDate && a.dischargeDate <= t) return false;
+      } else if (f.status === 'out') {
+        if (!a.dischargeDate || a.dischargeDate > t) return false;
+      }
       if (f.surgery && f.surgery !== 'all') {
         if (f.surgery === 'not_operated') {
           if (a.surgeryDate && a.surgeryDate <= t) return false;
@@ -1337,12 +1352,14 @@ button.date-row:active { transform: scale(.997); }
     const teachers = {};
     teachers[''] = 0;
     const surgery = { all: base.length, not_operated: 0, today: 0, tomorrow: 0, postop: 0 };
+    const status = { all: base.length, in: 0, out: 0 };
     const admittedPatients = {};
 
     base.forEach(function (a) {
       const key = a.teacherId || '';
       teachers[key] = (teachers[key] || 0) + 1;
       admittedPatients[a.patientId] = true;
+      if (a.dischargeDate && a.dischargeDate <= t) status.out += 1; else status.in += 1;
       if (!a.surgeryDate || a.surgeryDate > t) surgery.not_operated += 1;
       if (a.surgeryDate === t) surgery.today += 1;
       if (a.surgeryDate === addDays(t, 1)) surgery.tomorrow += 1;
@@ -1355,7 +1372,7 @@ button.date-row:active { transform: scale(.997); }
       (p.tags || []).forEach(function (id) { tags[id] = (tags[id] || 0) + 1; });
     });
 
-    return { teachers: teachers, surgery: surgery, tags: tags };
+    return { teachers: teachers, surgery: surgery, status: status, tags: tags };
   }
 
   // ---------- 同步合并 ----------
@@ -2549,6 +2566,12 @@ button.date-row:active { transform: scale(.997); }
       chip('术后', f.surgery === 'postop', 'filter-surgery', 'postop', counts.surgery.postop)
     ].join('');
 
+    const statusChips = [
+      chip('全部', f.status === 'all', 'filter-status', 'all', counts.status.all),
+      chip('在院', f.status === 'in', 'filter-status', 'in', counts.status.in),
+      chip('出院', f.status === 'out', 'filter-status', 'out', counts.status.out)
+    ].join('');
+
     const tagChips = (s.tags || []).map(function (t) {
       const active = f.tagIds.indexOf(t.id) >= 0;
       return chip(t.label, active, 'filter-tag', t.id, counts.tags[t.id] || 0, 'tag-chip',
@@ -2560,6 +2583,7 @@ button.date-row:active { transform: scale(.997); }
     if (f.surgery !== 'all') {
       activeBits.push({ not_operated: '未手术', today: '今术', tomorrow: '明术', postop: '术后' }[f.surgery]);
     }
+    if (f.status && f.status !== 'all') activeBits.push(f.status === 'in' ? '在院' : '出院');
     f.tagIds.forEach(function (id) {
       const t = (s.tags || []).find(function (x) { return x.id === id; });
       if (t) activeBits.push(t.label);
@@ -2570,7 +2594,9 @@ button.date-row:active { transform: scale(.997); }
       '<input class="search" id="search-input" data-input="search" placeholder="搜索姓名 / 床号 / 诊断" value="' + esc(app.state.q) + '">' +
       '<div class="filter-row"><span class="filter-label">老师</span><div class="chips">' + teacherChips + '</div></div>' +
       '<div class="filter-row"><span class="filter-label">手术</span><div class="chips">' + surgeryChips + '</div></div>' +
-      '<div class="filter-row"><span class="filter-label">标签</span><div class="chips">' + (tagChips || '<span class="faint small">设置里可添加标签</span>') + '</div></div>' +
+      '<div class="filter-row"><span class="filter-label">标签</span><div class="chips">' +
+        statusChips + '<span class="chip-divider"></span>' +
+        (tagChips || '<span class="faint small">设置里可添加标签</span>') + '</div></div>' +
       (activeBits.length ? '<div class="row small muted" style="margin-top:6px"><span>筛选：' + esc(activeBits.join(' · ')) + ' → ' + items.length + ' 人</span>' +
         '<button class="btn small ghost" data-act="filter-reset">重置</button></div>' : '') +
       '</div>';
@@ -2607,7 +2633,8 @@ button.date-row:active { transform: scale(.997); }
         if (cf.height && it.patient.height != null && it.patient.height !== '') bits.push(it.patient.height + ' cm');
         if (cf.admissionDate && it.adm.admissionDate) bits.push('入院 ' + root.UI.fmtDate(it.adm.admissionDate));
         const meta = bits.length ? '<div class="pc-surgery">' + esc(bits.join(' · ')) + '</div>' : '';
-        return '<button class="patient-card" data-act="detail" data-id="' + esc(it.adm.id) + '">' +
+        const reached = !!(it.adm.dischargeDate && it.adm.dischargeDate <= app.state.today);
+        return '<button class="patient-card' + (reached ? ' discharged' : '') + '" data-act="detail" data-id="' + esc(it.adm.id) + '">' +
           '<div class="pc-top">' +
           '<span class="pc-bed">' + esc(it.adm.bed) + '</span>' + tb +
           '<span class="pc-name">' + esc(it.patient.name) + '</span></div>' +
@@ -2620,6 +2647,9 @@ button.date-row:active { transform: scale(.997); }
       }).join('') + '</div>';
     }
 
+    const bulk = (f.status === 'out' && counts.status.out)
+      ? '<div class="bulk-archive"><button class="btn danger" data-act="archive-all-out">一键归档全部出院未归档（' + counts.status.out + ' 人）</button><div class="small faint">仅归档已到出院日期、仍在患者列表里的卡片。</div></div>'
+      : '';
     return '<div class="page-head"><div><h1>患者</h1><div class="sub">在院 ' + stats.inHospital + ' 人 · 今日待办 ' + stats.todayTodo + ' · 逾期 ' + stats.overdue + '</div></div>' +
       '<div class="row"><button class="btn ghost" data-nav="pending">待入院 <span class="badge">' + app.pendingList().length + '</span></button>' +
       '<button class="btn plus" data-act="add-patient" aria-label="新增患者" title="新增患者">+</button></div></div>' +
@@ -2627,7 +2657,7 @@ button.date-row:active { transform: scale(.997); }
       '<button class="' + (app.state.listMode === 'cards' ? 'active' : '') + '" data-act="list-mode" data-value="cards">卡片</button>' +
       '<button class="' + (app.state.listMode === 'table' ? 'active' : '') + '" data-act="list-mode" data-value="table">表格</button></div>' +
       '<span class="small muted">' + items.length + ' / ' + total + ' 人</span></div>' +
-      filterBar + listHtml;
+      filterBar + listHtml + bulk;
   };
 
   // ---------- 待入院 ----------
@@ -2691,13 +2721,14 @@ button.date-row:active { transform: scale(.997); }
     const footer = '<div class="detail-footer">' +
       (adm.status === 'pending' ? '<button class="btn primary" data-act="promote" data-id="' + esc(adm.id) + '">收进组</button>' : '') +
       (adm.status === 'admitted'
-        ? '<button class="btn ' + (adm.dischargeDate ? 'ghost' : 'primary') + '" data-act="discharge" data-id="' + esc(adm.id) + '">' +
-          (adm.dischargeDate ? '出院（已安排）' : '出院') + '</button>' +
+        ? (adm.dischargeDate
+          ? '<button class="btn ghost" data-act="cancel-discharge" data-id="' + esc(adm.id) + '">撤销出院</button>'
+          : '<button class="btn primary" data-act="discharge" data-id="' + esc(adm.id) + '">出院</button>') +
           '<button class="btn ghost" data-act="archive" data-id="' + esc(adm.id) + '">归档</button>'
         : '') +
       (adm.status === 'discharged' ? '<button class="btn good" data-act="restore" data-id="' + esc(adm.id) + '">改回在院</button>' : '') +
       '<button class="btn danger" data-act="delete-admission" data-id="' + esc(adm.id) + '">删除</button>' +
-      (adm.status === 'admitted' ? '<div class="small muted footer-note">点「出院」只建出院任务，卡片保留；点「归档」后才移入设置里的已出院。</div>' : '') +
+      (adm.status === 'admitted' ? '<div class="small muted footer-note">「出院」只建任务，卡片保留；「撤销出院」回到在院；「归档」后才移入设置里的已出院。</div>' : '') +
       '</div>';
 
     return '<div class="detail-back-row">' +
@@ -2724,7 +2755,7 @@ button.date-row:active { transform: scale(.997); }
       (bedHistory ? '<h3 style="margin-top:12px">床位变迁</h3>' + bedHistory : '') +
       '</section>' +
       '<section class="card todo-card"><div class="card-head"><h2>待办 <span class="small muted">' + ctx.tasks.length + ' 项</span></h2>' +
-      '<button class="btn plus tiny add-accent" data-act="free-todo" data-admission="' + esc(adm.id) + '" aria-label="加待办" title="加待办">+</button></div>' +
+      '<button class="btn plus tiny add-accent" data-act="todo-menu" data-admission="' + esc(adm.id) + '" aria-label="待办 / 出院" title="待办 / 出院">+</button></div>' +
       '<div class="task-list">' + taskRows + '</div></section>' +
       '</div>' +
       '<section class="card"><div class="card-head"><h2>任务历史</h2><button class="btn small ghost" data-act="history" data-id="' + esc(adm.id) + '">返工 / 全部</button></div>' +
@@ -2942,7 +2973,7 @@ button.date-row:active { transform: scale(.997); }
       overviewDay: 'today',
       overviewDate: '',
       listMode: 'cards',
-      filter: { teacherId: 'all', surgery: 'all', tagIds: [] },
+      filter: { teacherId: 'all', surgery: 'all', status: 'all', tagIds: [] },
       q: '',
       selectedId: '',
       intake: null,
@@ -3083,6 +3114,9 @@ button.date-row:active { transform: scale(.997); }
         case 'promote': this.openPromote(adId); break;
         case 'discharge': this.requestDischarge(adId); break;
         case 'archive': this.archive(adId); break;
+        case 'archive-all-out': this.archiveAllOut(); break;
+        case 'cancel-discharge': this.cancelDischarge(adId); break;
+        case 'todo-menu': this.openTodoMenu(adId); break;
         case 'restore': this.restore(adId); break;
         case 'delete-admission': this.deleteAdmission(adId); break;
         case 'detail': this.go('detail', adId); break;
@@ -3111,6 +3145,9 @@ button.date-row:active { transform: scale(.997); }
         case 'filter-surgery':
           this.state.filter.surgery = el.getAttribute('data-value');
           this.render(); break;
+        case 'filter-status':
+          this.state.filter.status = el.getAttribute('data-value') || 'all';
+          this.render(); break;
         case 'filter-tag': {
           const id = el.getAttribute('data-value');
           const arr = this.state.filter.tagIds;
@@ -3119,7 +3156,7 @@ button.date-row:active { transform: scale(.997); }
           this.render(); break;
         }
         case 'filter-reset':
-          this.state.filter = { teacherId: 'all', surgery: 'all', tagIds: [] };
+          this.state.filter = { teacherId: 'all', surgery: 'all', status: 'all', tagIds: [] };
           this.state.q = '';
           this.render(); break;
         case 'list-mode':
@@ -3912,6 +3949,106 @@ button.date-row:active { transform: scale(.997); }
         await Store.put('admissions', adm);
         await this.reload();
       });
+    },
+
+    openTodoMenu(admissionId) {
+      const adm = this.admission(admissionId);
+      if (!adm) return;
+      const hasDate = !!adm.dischargeDate;
+      const self = this;
+      UI.modal({
+        title: '待办 / 出院',
+        body: '<p class="small muted">加一条临时待办，或者安排一个出院日期。' +
+          (hasDate ? '当前已安排：' + UI.esc(adm.dischargeDate) + '。' : '') + '</p>',
+        actions: [
+          { label: '取消', className: 'ghost' },
+          {
+            label: '+ 加待办', className: 'primary', onClick: function (close) {
+              close();
+              self.openFreeTodo(admissionId, '');
+            }
+          },
+          {
+            label: '出院', className: 'ghost', onClick: function (close) {
+              close();
+              self.openDischargeDate(admissionId);
+            }
+          }
+        ]
+      });
+    },
+
+    openDischargeDate(admissionId) {
+      const adm = this.admission(admissionId);
+      if (!adm || adm.status !== 'admitted') { UI.toast('只有在院患者可以安排出院'); return; }
+      const current = adm.dischargeDate || this.state.today;
+      const self = this;
+      UI.modal({
+        title: '安排出院日期',
+        body: '<form id="discharge-date-form">' +
+          '<p class="small muted">到这一天会生成「出院」任务，等同于当天点了详情底部的出院；任务完成后卡片仍保留，归档后才进已出院。</p>' +
+          '<div class="field"><label>出院日期</label><input id="discharge-date-pick" type="date" min="' + UI.esc(this.state.today) + '" value="' + UI.esc(current) + '"></div>' +
+          '</form>',
+        actions: [
+          { label: '取消', className: 'ghost' },
+          {
+            label: '保存', className: 'primary', onClick: async function (close) {
+              const el = document.getElementById('discharge-date-pick');
+              const date = el ? el.value : '';
+              if (!Engine.validDate(date)) { UI.toast('日期无效'); return; }
+              if (date < self.state.today) { UI.toast('出院日期不能早于今天'); return; }
+              adm.dischargeDate = date;
+              if (adm.taskPlans) delete adm.taskPlans.discharge;
+              adm.updatedAt = Store.nowISO();
+              await Store.put('admissions', adm);
+              await self.reload();
+              close();
+              UI.toast(date === self.state.today ? '已建今日出院任务' : '已安排 ' + date + ' 出院');
+            }
+          }
+        ]
+      });
+    },
+
+    async cancelDischarge(id) {
+      const adm = this.admission(id);
+      if (!adm || !adm.dischargeDate) { UI.toast('当前没有出院安排'); return; }
+      const events = (this.state.data.events || []).filter((e) => e.admissionId === id && e.taskType === 'discharge' && !e.deletedAt);
+      const term = Engine.terminalEvent(events);
+      const msg = term && (term.action === 'done' || term.action === 'senior' || term.action === 'not_needed')
+        ? '撤销出院会取消出院任务，并撤销最近一次出院记录。患者回到在院。'
+        : '撤销出院会取消出院任务，患者回到在院。';
+      const ok = await UI.confirm(msg, { okLabel: '撤销出院', danger: true });
+      if (!ok) return;
+      adm.dischargeDate = '';
+      if (adm.taskPlans) delete adm.taskPlans.discharge;
+      adm.updatedAt = Store.nowISO();
+      await Store.put('admissions', adm);
+      if (term && (term.action === 'done' || term.action === 'senior' || term.action === 'not_needed')) {
+        term.deletedAt = Store.nowISO();
+        term.updatedAt = term.deletedAt;
+        await Store.put('events', term);
+      }
+      await this.reload();
+      UI.toast('已撤销出院，回到在院');
+    },
+
+    async archiveAllOut() {
+      const out = (this.state.data.admissions || []).filter((a) => a && !a.deletedAt && a.status === 'admitted' && a.dischargeDate && a.dischargeDate <= this.state.today);
+      if (!out.length) { UI.toast('没有出院未归档患者'); return; }
+      const ok = await UI.confirm('归档全部 ' + out.length + ' 位出院未归档患者？归档后从患者列表移除，进入设置里的已出院。', { okLabel: '一键归档' });
+      if (!ok) return;
+      const now = Store.nowISO();
+      out.forEach((a) => {
+        a.status = 'discharged';
+        a.archivedAt = now;
+        a.dischargeDate = '';
+        if (a.taskPlans) delete a.taskPlans.discharge;
+        a.updatedAt = now;
+      });
+      await Store.bulkPut('admissions', out);
+      await this.reload();
+      UI.toast('已归档 ' + out.length + ' 位出院患者');
     },
 
     async archive(id) {
