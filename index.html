@@ -518,6 +518,27 @@ button.date-row:active { transform: scale(.997); }
   background: var(--card); border: 1px dashed var(--border); border-radius: var(--radius);
 }
 .bulk-archive .btn { width: 100%; }
+
+/* 老师直点 / 设置里的常用诊断 */
+.teacher-picks { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.teacher-pick {
+  border: 1px solid var(--border); background: var(--card); color: var(--text);
+  border-radius: 999px; padding: 6px 10px; min-height: 34px;
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 650;
+}
+.teacher-pick.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent); }
+.teacher-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--faint); display: inline-block; }
+.teacher-dot.empty { background: var(--border); }
+.diag-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) 76px auto; gap: 6px; align-items: center; flex-wrap: nowrap; }
+.diag-row input[type="text"] { width: 100%; min-width: 0; padding: 7px 8px; min-height: 36px; }
+.diag-row .btn { padding: 6px 8px; }
+.surgery-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.surgery-row .surgery-label { width: 100%; min-width: 0; }
+.surgery-row .btn { padding: 6px 8px; }
+@media (max-width: 380px) {
+  .diag-row { grid-template-columns: 64px minmax(0, 1fr) 64px auto; }
+  .diag-row input[type="text"] { font-size: 13px; padding: 6px; }
+}
 </style>
 </head>
 <body>
@@ -525,7 +546,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.22.2122';</script>
+<script>window.APP_VERSION = 'v2026.10.22.2142';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -1897,6 +1918,19 @@ button.date-row:active { transform: scale(.997); }
         { id: 'yi', label: '乙', color: '#c47a16' },
         { id: 'gan', label: '感', color: '#2f7d6e' }
       ],
+      quickSurgeries: [
+        { id: 'qs-tka', label: 'TKA' },
+        { id: 'qs-uka', label: 'UKA' },
+        { id: 'qs-tha', label: 'THA' }
+      ],
+      quickDiagnoses: [
+        { id: 'qd-l-knee', short: '左膝', full: '左膝骨关节炎', surgery: 'TKA' },
+        { id: 'qd-r-knee', short: '右膝', full: '右膝骨关节炎', surgery: 'TKA' },
+        { id: 'qd-l-hip', short: '左髋', full: '左髋关节病', surgery: 'THA' },
+        { id: 'qd-r-hip', short: '右髋', full: '右髋关节病', surgery: 'THA' },
+        { id: 'qd-l-femur', short: '左股骨颈', full: '左股骨颈骨折', surgery: 'THA' },
+        { id: 'qd-r-femur', short: '右股骨颈', full: '右股骨颈骨折', surgery: 'THA' }
+      ],
       cardFields: {
         teacher: true,
         tags: true,
@@ -2888,6 +2922,18 @@ button.date-row:active { transform: scale(.997); }
         '<input type="color" class="color-input tag-color" data-id="' + esc(t.id) + '" value="' + esc(t.color || '#64748b') + '">' +
         '<button type="button" class="btn small ghost" data-act="remove-tag" data-id="' + esc(t.id) + '">删除</button></div>';
     }).join('');
+    const diagRows = app.quickDiagnoses().map(function (d) {
+      return '<div class="list-row diag-row" data-id="' + esc(d.id) + '">' +
+        '<input type="text" class="diag-short" value="' + esc(d.short || '') + '" placeholder="简称">' +
+        '<input type="text" class="diag-full" value="' + esc(d.full || '') + '" placeholder="完整诊断">' +
+        '<input type="text" class="diag-surgery" value="' + esc(d.surgery || '') + '" placeholder="默认术式">' +
+        '<button type="button" class="btn small ghost" data-act="remove-diag" data-id="' + esc(d.id) + '">删除</button></div>';
+    }).join('');
+    const surgeryRows = app.quickSurgeries().map(function (x) {
+      return '<div class="list-row surgery-row" data-id="' + esc(x.id) + '">' +
+        '<input type="text" class="surgery-label" value="' + esc(x.label || '') + '" placeholder="如 TKA">' +
+        '<button type="button" class="btn small ghost" data-act="remove-surgery" data-id="' + esc(x.id) + '">删除</button></div>';
+    }).join('');
 
     return '<div class="page-head"><div><h1>设置</h1><div class="sub">设备 ' + esc((meta.deviceId || '').slice(0, 8)) + ' · 上次备份 ' + esc(meta.lastBackupAt ? root.UI.fmtDateTime(meta.lastBackupAt) : '从未') + '</div></div></div>' +
       '<div class="settings">' +
@@ -2902,6 +2948,12 @@ button.date-row:active { transform: scale(.997); }
       '<button type="button" class="btn small" data-act="add-teacher">+ 加老师</button>' +
       '<h2 style="margin-top:16px">标签</h2><div id="tag-list">' + tagRows + '</div>' +
       '<button type="button" class="btn small" data-act="add-tag">+ 加标签</button>' +
+      '<h2 style="margin-top:16px">常用诊断 / 术式</h2>' +
+      '<p class="small muted">这里的内容就是新增/编辑患者里的快捷按钮。</p>' +
+      '<div id="diag-list">' + diagRows + '</div>' +
+      '<button type="button" class="btn small" data-act="add-diag">+ 加常用诊断</button>' +
+      '<h3 style="margin-top:12px">常用术式</h3><div id="surgery-list">' + surgeryRows + '</div>' +
+      '<button type="button" class="btn small" data-act="add-surgery">+ 加常用术式</button>' +
       '<h2 style="margin-top:16px">卡片显示</h2>' +
       '<div class="switch-row"><span>带教老师</span><label class="check"><input type="checkbox" name="cardTeacher"' + (s.cardFields.teacher ? ' checked' : '') + '>显示</label></div>' +
       '<div class="switch-row"><span>标签</span><label class="check"><input type="checkbox" name="cardTags"' + (s.cardFields.tags ? ' checked' : '') + '>显示</label></div>' +
@@ -3111,6 +3163,14 @@ button.date-row:active { transform: scale(.997); }
           if (surgery) surgery.value = el.getAttribute('data-surgery') || surgery.value;
           break;
         }
+        case 'pick-teacher': {
+          const group = el.closest('.teacher-picks');
+          if (!group) break;
+          group.querySelectorAll('.teacher-pick').forEach((x) => x.classList.toggle('active', x === el));
+          const input = group.querySelector('input[name="teacherId"]');
+          if (input) input.value = el.getAttribute('data-value') || '';
+          break;
+        }
         case 'promote': this.openPromote(adId); break;
         case 'discharge': this.requestDischarge(adId); break;
         case 'archive': this.archive(adId); break;
@@ -3182,6 +3242,10 @@ button.date-row:active { transform: scale(.997); }
         case 'remove-teacher': this.removeRow(el); break;
         case 'add-tag': this.addTagRow(); break;
         case 'remove-tag': this.removeRow(el); break;
+        case 'add-diag': this.addDiagRow(); break;
+        case 'remove-diag': this.removeRow(el); break;
+        case 'add-surgery': this.addSurgeryRow(); break;
+        case 'remove-surgery': this.removeRow(el); break;
         case 'backup-export': this.exportBackup(); break;
         case 'backup-import': this.importBackup(); break;
         case 'sync-export': this.exportSync(); break;
@@ -3661,9 +3725,6 @@ button.date-row:active { transform: scale(.997); }
         const checked = (p.tags || []).indexOf(t.id) >= 0 ? ' checked' : '';
         return '<label class="check" style="margin-right:10px"><input type="checkbox" name="tags" value="' + UI.esc(t.id) + '"' + checked + '>' + UI.esc(t.label) + '</label>';
       }).join('');
-      const teacherOpts = '<option value="">未分配</option>' + (s.teachers || []).map((t) =>
-        '<option value="' + UI.esc(t.id) + '"' + (adm.teacherId === t.id ? ' selected' : '') + '>' + UI.esc(t.name) + '</option>').join('');
-
       const body = '<form id="adm-form">' +
         '<div class="grid2">' +
         '<div class="field"><label>姓名 *</label><input name="name" value="' + UI.esc(p.name || '') + '"></div>' +
@@ -3677,7 +3738,7 @@ button.date-row:active { transform: scale(.997); }
         '<div class="field"><label>手术名称</label><input name="surgeryName" value="' + UI.esc(adm.surgeryName || '') + '"></div>' +
         '<div class="field"><label>手术日期</label><input name="surgeryDate" type="date" value="' + UI.esc(adm.surgeryDate || '') + '"></div>' +
         '<div class="field" style="grid-column:1/-1"><label>备注</label><textarea name="notes" placeholder="如 糖尿病、抗凝药、家属联系方式…">' + UI.esc(p.notes || '') + '</textarea></div>' +
-        '<div class="field" style="grid-column:1/-1"><label>带教老师</label><select name="teacherId">' + teacherOpts + '</select></div>' +
+        '<div class="field" style="grid-column:1/-1"><label>带教老师</label>' + this.teacherPickHtml(adm.teacherId || '', true) + '</div>' +
         '<div class="field" style="grid-column:1/-1"><label>标签</label><div class="row">' + (tags || '<span class="faint small">设置里先添加标签</span>') + '</div></div>' +
         '</div></form>';
 
@@ -3738,28 +3799,46 @@ button.date-row:active { transform: scale(.997); }
       return true;
     },
 
-    // ---------- 常用诊断 / 术式快捷录入 ----------
+    // ---------- 常用诊断 / 术式 / 老师快捷选择 ----------
+    quickDiagnoses() {
+      const s = this.state.data.settings;
+      if (Array.isArray(s.quickDiagnoses)) return s.quickDiagnoses;
+      return Store.defaultSettings().quickDiagnoses;
+    },
+    quickSurgeries() {
+      const s = this.state.data.settings;
+      if (Array.isArray(s.quickSurgeries)) return s.quickSurgeries;
+      return Store.defaultSettings().quickSurgeries;
+    },
     quickPickHtml(withSurgery) {
-      const self = this;
-      const diags = [
-        ['左膝', '左膝骨关节炎', 'TKA'],
-        ['右膝', '右膝骨关节炎', 'TKA'],
-        ['左髋', '左髋关节病', 'THA'],
-        ['右髋', '右髋关节病', 'THA'],
-        ['左股骨颈', '左股骨颈骨折', 'THA'],
-        ['右股骨颈', '右股骨颈骨折', 'THA']
-      ];
-      const diagChips = diags.map(function (x) {
-        return '<button type="button" class="chip" data-act="quick-diagnosis" data-diagnosis="' + UI.esc(x[1]) + '" data-surgery="' + UI.esc(x[2]) + '" title="' + UI.esc(x[1]) + '">' + UI.esc(x[0]) + '</button>';
-      }).join('');
-      const surgeryChips = [['TKA', 'TKA'], ['UKA', 'UKA'], ['THA', 'THA']].map(function (x) {
-        return '<button type="button" class="chip" data-act="quick-surgery" data-surgery="' + UI.esc(x[0]) + '">' + UI.esc(x[1]) + '</button>';
-      }).join('');
+      const diags = this.quickDiagnoses();
+      const surgeries = this.quickSurgeries();
+      const diagChips = diags.length ? diags.map(function (x) {
+        return '<button type="button" class="chip" data-act="quick-diagnosis" data-diagnosis="' + UI.esc(x.full) + '" data-surgery="' + UI.esc(x.surgery || '') + '" title="' + UI.esc(x.full) + '">' + UI.esc(x.short || x.full) + '</button>';
+      }).join('') : '<span class="faint small">设置里可以添加常用诊断</span>';
+      const surgeryChips = surgeries.length ? surgeries.map(function (x) {
+        return '<button type="button" class="chip" data-act="quick-surgery" data-surgery="' + UI.esc(x.label) + '">' + UI.esc(x.label) + '</button>';
+      }).join('') : '<span class="faint small">设置里可以添加常用术式</span>';
       return '<div class="quick-pick">' +
         '<div class="quick-row"><span class="quick-label">常用诊断</span>' + diagChips + '</div>' +
         (withSurgery ? '<div class="quick-row"><span class="quick-label">术式</span>' + surgeryChips + '</div>' : '') +
-        '<div class="quick-hint">' + (withSurgery ? '点诊断会填入诊断和默认术式；膝可再点 TKA / UKA，也可直接改文字。' : '点一下填入诊断；术式稍后在详情补充。') + '</div>' +
+        '<div class="quick-hint">' + (withSurgery ? '点诊断会填入诊断和默认术式；可再点术式或直接改文字。' : '点一下填入诊断；术式稍后在详情补充。') + '</div>' +
         '</div>';
+    },
+    teacherPickHtml(currentId, allowEmpty) {
+      const teachers = this.state.data.settings.teachers || [];
+      let current = teachers.some(function (t) { return t.id === currentId; }) ? currentId : '';
+      if (!allowEmpty && !current && teachers.length) current = teachers[0].id;
+      const chips = teachers.map(function (t) {
+        const active = current === t.id;
+        return '<button type="button" class="teacher-pick ' + (active ? 'active' : '') + '" data-act="pick-teacher" data-value="' + UI.esc(t.id) + '">' +
+          '<span class="teacher-dot" style="background:' + UI.esc(t.color || '#7c3aed') + '"></span>' + UI.esc(t.name) + '</button>';
+      }).join('');
+      const empty = allowEmpty
+        ? '<button type="button" class="teacher-pick ' + (!current ? 'active' : '') + '" data-act="pick-teacher" data-value=""><span class="teacher-dot empty"></span>未分配</button>'
+        : '';
+      const hint = teachers.length ? '' : '<span class="faint small">设置里先添加带教老师</span>';
+      return '<div class="teacher-picks"><input type="hidden" name="teacherId" value="' + UI.esc(current) + '">' + empty + chips + hint + '</div>';
     },
 
     // ---------- 患者卡片（直接进患者栏，不写病史模板） ----------
@@ -3770,10 +3849,6 @@ button.date-row:active { transform: scale(.997); }
         const checked = (p.tags || []).indexOf(t.id) >= 0 ? ' checked' : '';
         return '<label class="check" style="margin-right:10px"><input type="checkbox" name="tags" value="' + UI.esc(t.id) + '"' + checked + '>' + UI.esc(t.label) + '</label>';
       }).join('');
-      const teacherOpts = '<option value="">未分配</option>' + (s.teachers || []).map(function (t) {
-        return '<option value="' + UI.esc(t.id) + '"' + (a.teacherId === t.id ? ' selected' : '') + '>' + UI.esc(t.name) + '</option>';
-      }).join('');
-
       return '<form id="adm-form">' +
         '<div class="grid2">' +
         '<div class="field"><label>姓名 *</label><input name="name" value="' + UI.esc(p.name || '') + '"></div>' +
@@ -3787,7 +3862,7 @@ button.date-row:active { transform: scale(.997); }
         '<div class="field"><label>手术名称</label><input name="surgeryName" value="' + UI.esc(a.surgeryName || '') + '"></div>' +
         '<div class="field"><label>手术日期</label><input name="surgeryDate" type="date" value="' + UI.esc(a.surgeryDate || '') + '"></div>' +
         '<div class="field" style="grid-column:1/-1"><label>备注</label><textarea name="notes" placeholder="如 糖尿病、抗凝药、家属联系方式…">' + UI.esc(p.notes || '') + '</textarea></div>' +
-        '<div class="field" style="grid-column:1/-1"><label>带教老师</label><select name="teacherId">' + teacherOpts + '</select></div>' +
+        '<div class="field" style="grid-column:1/-1"><label>带教老师</label>' + this.teacherPickHtml(a.teacherId || '', true) + '</div>' +
         '<div class="field" style="grid-column:1/-1"><label>标签</label><div class="row">' + (tags || '<span class="faint small">设置里先添加标签</span>') + '</div></div>' +
         '</div></form>';
     },
@@ -3874,11 +3949,8 @@ button.date-row:active { transform: scale(.997); }
       const teachers = s.teachers || [];
       if (!teachers.length) { UI.toast('先在设置里添加带教老师'); return; }
       const current = adm.teacherId || teachers[0].id;
-      const opts = teachers.map(function (t) {
-        return '<option value="' + UI.esc(t.id) + '"' + (current === t.id ? ' selected' : '') + '>' + UI.esc(t.name) + '</option>';
-      }).join('');
       const body = '<p class="small muted">把 <b>' + UI.esc(p.name) + '</b>（' + UI.esc(adm.bed) + '）收进哪个老师的组？</p>' +
-        '<div class="field"><label>带教老师 *</label><select id="promote-teacher">' + opts + '</select></div>';
+        '<div class="field"><label>带教老师 *</label>' + this.teacherPickHtml(current, false) + '</div>';
       const self = this;
       UI.modal({
         title: '收进组',
@@ -3887,7 +3959,7 @@ button.date-row:active { transform: scale(.997); }
           { label: '取消', className: 'ghost' },
           {
             label: '收进组', className: 'primary', onClick: async function (close) {
-              const sel = document.getElementById('promote-teacher');
+              const sel = document.querySelector('.modal-card [name="teacherId"]');
               const tid = sel ? sel.value : '';
               if (!tid) { UI.toast('先选带教老师'); return; }
               const ok = await self.promote(id, tid);
@@ -4586,6 +4658,16 @@ button.date-row:active { transform: scale(.997); }
           color: color ? color.value : '#64748b'
         };
       }).filter((t) => t.label);
+      s.quickDiagnoses = Array.from(document.querySelectorAll('#diag-list .diag-row')).map((row) => ({
+        id: row.getAttribute('data-id'),
+        short: (row.querySelector('.diag-short') || {}).value ? row.querySelector('.diag-short').value.trim() : '',
+        full: (row.querySelector('.diag-full') || {}).value ? row.querySelector('.diag-full').value.trim() : '',
+        surgery: (row.querySelector('.diag-surgery') || {}).value ? row.querySelector('.diag-surgery').value.trim() : ''
+      })).filter((d) => d.full);
+      s.quickSurgeries = Array.from(document.querySelectorAll('#surgery-list .surgery-row')).map((row) => ({
+        id: row.getAttribute('data-id'),
+        label: (row.querySelector('.surgery-label') || {}).value ? row.querySelector('.surgery-label').value.trim() : ''
+      })).filter((x) => x.label);
       await Store.saveSettings(s);
       await this.reload();
       UI.toast('设置已保存');
@@ -4609,6 +4691,28 @@ button.date-row:active { transform: scale(.997); }
         '<div class="list-row"><input type="text" class="tag-label" data-id="' + id + '" value="" placeholder="标签字">' +
         '<input type="color" class="color-input tag-color" data-id="' + id + '" value="#64748b">' +
         '<button type="button" class="btn small ghost" data-act="remove-tag" data-id="' + id + '">删除</button></div>');
+    },
+
+    addDiagRow() {
+      const list = document.getElementById('diag-list');
+      if (!list) return;
+      const id = Store.uid();
+      list.insertAdjacentHTML('beforeend',
+        '<div class="list-row diag-row" data-id="' + id + '">' +
+        '<input type="text" class="diag-short" placeholder="简称">' +
+        '<input type="text" class="diag-full" placeholder="完整诊断">' +
+        '<input type="text" class="diag-surgery" placeholder="默认术式">' +
+        '<button type="button" class="btn small ghost" data-act="remove-diag">删除</button></div>');
+    },
+
+    addSurgeryRow() {
+      const list = document.getElementById('surgery-list');
+      if (!list) return;
+      const id = Store.uid();
+      list.insertAdjacentHTML('beforeend',
+        '<div class="list-row surgery-row" data-id="' + id + '">' +
+        '<input type="text" class="surgery-label" placeholder="如 TKA">' +
+        '<button type="button" class="btn small ghost" data-act="remove-surgery">删除</button></div>');
     },
 
     removeRow(el) {
