@@ -174,7 +174,7 @@ a { color: var(--accent); }
   width: 24px; height: 24px; border-radius: 50%; background: var(--purple-soft);
   color: var(--purple); font-size: 12px; font-weight: 800;
 }
-.teacher-badge.empty { background: var(--bg); color: var(--faint); }
+.teacher-badge.unassigned { background: var(--bg); color: var(--faint); }
 .todo-badge {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 8px; border-radius: 999px; background: var(--accent-soft);
@@ -528,7 +528,7 @@ button.date-row:active { transform: scale(.997); }
 }
 .teacher-pick.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent); }
 .teacher-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--faint); display: inline-block; }
-.teacher-dot.empty { background: var(--border); }
+.teacher-dot.unassigned { background: var(--border); }
 .diag-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) 76px auto; gap: 6px; align-items: center; flex-wrap: nowrap; }
 .diag-row input[type="text"] { width: 100%; min-width: 0; padding: 7px 8px; min-height: 36px; }
 .diag-row .btn { padding: 6px 8px; }
@@ -546,7 +546,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.22.2142';</script>
+<script>window.APP_VERSION = 'v2026.10.22.2151';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -2317,7 +2317,7 @@ button.date-row:active { transform: scale(.997); }
     const t = (app.state.data.settings.teachers || []).find(function (x) { return x.id === adm.teacherId; });
     const color = t && t.color ? t.color : '#7c3aed';
     const style = name === '—' ? '' : 'background:' + esc(color) + ';color:#fff;';
-    return '<span class="teacher-badge ' + (name === '—' ? 'empty' : '') + '" style="' + style + '" title="带教老师：' + esc(name) + '">' + esc(ch) + '</span>';
+    return '<span class="teacher-badge ' + (name === '—' ? 'unassigned' : '') + '" style="' + style + '" title="带教老师：' + esc(name) + '">' + esc(ch) + '</span>';
   }
 
   function tagsHtml(app, patient) {
@@ -3835,7 +3835,7 @@ button.date-row:active { transform: scale(.997); }
           '<span class="teacher-dot" style="background:' + UI.esc(t.color || '#7c3aed') + '"></span>' + UI.esc(t.name) + '</button>';
       }).join('');
       const empty = allowEmpty
-        ? '<button type="button" class="teacher-pick ' + (!current ? 'active' : '') + '" data-act="pick-teacher" data-value=""><span class="teacher-dot empty"></span>未分配</button>'
+        ? '<button type="button" class="teacher-pick ' + (!current ? 'active' : '') + '" data-act="pick-teacher" data-value=""><span class="teacher-dot unassigned"></span>未分配</button>'
         : '';
       const hint = teachers.length ? '' : '<span class="faint small">设置里先添加带教老师</span>';
       return '<div class="teacher-picks"><input type="hidden" name="teacherId" value="' + UI.esc(current) + '">' + empty + chips + hint + '</div>';
