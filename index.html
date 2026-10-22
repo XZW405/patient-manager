@@ -555,7 +555,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.22.2211';</script>
+<script>window.APP_VERSION = 'v2026.10.22.2231';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -3131,16 +3131,38 @@ button.date-row:active { transform: scale(.997); }
       });
 
       let searchTimer = null;
+      let searchComposing = false;
+      const applySearch = (v) => {
+        const value = String(v == null ? '' : v);
+        if (this.state.q === value) return;
+        this.state.q = value;
+        this.render();
+        const input = document.getElementById('search-input');
+        if (input) {
+          input.focus();
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      };
+      const scheduleSearch = (v, delay) => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          if (searchComposing) return;
+          applySearch(v);
+        }, delay);
+      };
+      document.addEventListener('compositionstart', (e) => {
+        if (e.target && e.target.id === 'search-input') searchComposing = true;
+      });
+      document.addEventListener('compositionend', (e) => {
+        if (e.target && e.target.id === 'search-input') {
+          searchComposing = false;
+          scheduleSearch(e.target.value, 80);
+        }
+      });
       document.addEventListener('input', (e) => {
         if (e.target && e.target.id === 'search-input') {
-          const v = e.target.value;
-          clearTimeout(searchTimer);
-          searchTimer = setTimeout(() => {
-            this.state.q = v;
-            this.render();
-            const input = document.getElementById('search-input');
-            if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
-          }, 220);
+          if (searchComposing || e.isComposing) return;
+          scheduleSearch(e.target.value, 300);
         }
       });
 
