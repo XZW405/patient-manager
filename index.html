@@ -525,7 +525,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.22.2113';</script>
+<script>window.APP_VERSION = 'v2026.10.22.2122';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -2748,7 +2748,7 @@ button.date-row:active { transform: scale(.997); }
         ['手术', esc(adm.surgeryName || '—')],
         ['手术日期', esc(root.UI.fmtDateFull(adm.surgeryDate))],
         ['带教老师', esc(teacherName(app, adm.teacherId))],
-        ['状态', esc(adm.status === 'admitted' ? (adm.dischargeDate ? '在院（出院已安排）' : '在院') : (adm.status === 'pending' ? '待入院' : '已出院'))],
+        ['状态', esc(adm.status === 'admitted' ? '在院' : (adm.status === 'pending' ? '待入院' : '已出院'))],
         ['备注', p.notes ? '<div class="text-block note-text">' + esc(p.notes) + '</div>' : '—']
       ]) +
       (res.backfilled ? '<div class="small faint" style="margin-top:8px">补录：录入前任务已按默认天数跳过。</div>' : '') +
