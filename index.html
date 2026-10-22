@@ -539,6 +539,15 @@ button.date-row:active { transform: scale(.997); }
   .diag-row { grid-template-columns: 64px minmax(0, 1fr) 64px auto; }
   .diag-row input[type="text"] { font-size: 13px; padding: 6px; }
 }
+
+/* 性别直点 */
+.sex-picks { display: flex; gap: 6px; flex-wrap: wrap; }
+.sex-pick {
+  border: 1px solid var(--border); background: var(--card); color: var(--text);
+  border-radius: 999px; min-width: 56px; min-height: 36px; padding: 5px 12px;
+  font-size: 13px; font-weight: 650;
+}
+.sex-pick.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent); }
 </style>
 </head>
 <body>
@@ -546,7 +555,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.22.2151';</script>
+<script>window.APP_VERSION = 'v2026.10.22.2159';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -2845,8 +2854,7 @@ button.date-row:active { transform: scale(.997); }
         : '<section class="card"><h2>基本信息</h2>' +
           '<div class="grid2">' +
           '<div class="field"><label>姓名 *</label><input name="name" value="' + val(p.name) + '" required></div>' +
-          '<div class="field"><label>性别</label><select name="sex"><option value="">未填</option>' +
-          '<option value="男"' + sel(p.sex, '男') + '>男</option><option value="女"' + sel(p.sex, '女') + '>女</option></select></div>' +
+          '<div class="field"><label>性别</label>' + app.sexPickHtml(p.sex) + '</div>' +
           '<div class="field"><label>年龄</label><input name="age" type="number" inputmode="numeric" min="0" max="120" value="' + val(p.age) + '"></div>' +
           '<div class="field"><label>身高（cm）</label><input name="height" type="number" inputmode="numeric" min="0" max="250" value="' + val(p.height) + '"></div>' +
           '<div class="field"><label>床号 *</label><input name="bed" value="' + val(a.bed) + '" placeholder="如 心内一11 / +2"></div>' +
@@ -3161,6 +3169,14 @@ button.date-row:active { transform: scale(.997); }
           const form = el.closest('form');
           const surgery = form && form.querySelector('[name="surgeryName"]');
           if (surgery) surgery.value = el.getAttribute('data-surgery') || surgery.value;
+          break;
+        }
+        case 'pick-sex': {
+          const group = el.closest('.sex-picks');
+          if (!group) break;
+          group.querySelectorAll('.sex-pick').forEach((x) => x.classList.toggle('active', x === el));
+          const input = group.querySelector('input[name="sex"]');
+          if (input) input.value = el.getAttribute('data-value') || '';
           break;
         }
         case 'pick-teacher': {
@@ -3728,7 +3744,7 @@ button.date-row:active { transform: scale(.997); }
       const body = '<form id="adm-form">' +
         '<div class="grid2">' +
         '<div class="field"><label>姓名 *</label><input name="name" value="' + UI.esc(p.name || '') + '"></div>' +
-        '<div class="field"><label>性别</label><select name="sex"><option value="">未填</option><option value="男"' + (p.sex === '男' ? ' selected' : '') + '>男</option><option value="女"' + (p.sex === '女' ? ' selected' : '') + '>女</option></select></div>' +
+        '<div class="field"><label>性别</label>' + this.sexPickHtml(p.sex) + '</div>' +
         '<div class="field"><label>年龄</label><input name="age" type="number" inputmode="numeric" value="' + UI.esc(p.age != null ? p.age : '') + '"></div>' +
         '<div class="field"><label>身高 cm</label><input name="height" type="number" inputmode="numeric" value="' + UI.esc(p.height != null ? p.height : '') + '"></div>' +
         '<div class="field"><label>床号 *</label><input name="bed" value="' + UI.esc(adm.bed || '') + '"></div>' +
@@ -3825,6 +3841,13 @@ button.date-row:active { transform: scale(.997); }
         '<div class="quick-hint">' + (withSurgery ? '点诊断会填入诊断和默认术式；可再点术式或直接改文字。' : '点一下填入诊断；术式稍后在详情补充。') + '</div>' +
         '</div>';
     },
+    sexPickHtml(current) {
+      const cur = current === '男' || current === '女' ? current : '';
+      const opts = [['', '未填'], ['男', '男'], ['女', '女']].map(function (x) {
+        return '<button type="button" class="sex-pick ' + (cur === x[0] ? 'active' : '') + '" data-act="pick-sex" data-value="' + UI.esc(x[0]) + '">' + UI.esc(x[1]) + '</button>';
+      }).join('');
+      return '<div class="sex-picks"><input type="hidden" name="sex" value="' + UI.esc(cur) + '">' + opts + '</div>';
+    },
     teacherPickHtml(currentId, allowEmpty) {
       const teachers = this.state.data.settings.teachers || [];
       let current = teachers.some(function (t) { return t.id === currentId; }) ? currentId : '';
@@ -3852,7 +3875,7 @@ button.date-row:active { transform: scale(.997); }
       return '<form id="adm-form">' +
         '<div class="grid2">' +
         '<div class="field"><label>姓名 *</label><input name="name" value="' + UI.esc(p.name || '') + '"></div>' +
-        '<div class="field"><label>性别</label><select name="sex"><option value="">未填</option><option value="男"' + (p.sex === '男' ? ' selected' : '') + '>男</option><option value="女"' + (p.sex === '女' ? ' selected' : '') + '>女</option></select></div>' +
+        '<div class="field"><label>性别</label>' + this.sexPickHtml(p.sex) + '</div>' +
         '<div class="field"><label>年龄</label><input name="age" type="number" inputmode="numeric" value="' + UI.esc(p.age != null ? p.age : '') + '"></div>' +
         '<div class="field"><label>身高 cm</label><input name="height" type="number" inputmode="numeric" value="' + UI.esc(p.height != null ? p.height : '') + '"></div>' +
         '<div class="field"><label>床号 *</label><input name="bed" value="' + UI.esc(a.bed || '') + '"></div>' +
