@@ -587,7 +587,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.28.0021';</script>
+<script>window.APP_VERSION = 'v2026.10.28.0035';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -5398,13 +5398,13 @@ button.date-row:active { transform: scale(.997); }
       const lastLabel = this.lastChangedLabel();
       const items = this.filtered();
       if (!items.length) { UI.toast('当前没有可导出的患者'); return; }
-      const W = 1500;
-      const pad = 44;
+      const W = 1800;
+      const pad = 48;
       const top = 122;
       const headerH = 62;
-      const rowH = 66;
+      const rowH = 82;
       const footerH = 92;
-      const cols = [90, 200, 440, 395, 265];
+      const cols = [160, 170, 390, 350, 250, 360];
       const height = top + headerH + items.length * rowH + footerH;
       const canvas = document.createElement('canvas');
       canvas.width = W;
@@ -5424,6 +5424,24 @@ button.date-row:active { transform: scale(.997); }
         while (v.length > 1 && ctx.measureText(v + '…').width > maxWidth) v = v.slice(0, -1);
         return v + '…';
       };
+      const wrap = (s, maxWidth, size, weight, maxLines) => {
+        const raw = String(s == null ? '' : s);
+        const out = [];
+        let rest = raw;
+        while (rest && out.length < maxLines) {
+          ctx.font = (weight || 400) + ' ' + size + 'px ' + font;
+          let take = rest;
+          while (take.length > 1 && ctx.measureText(take).width > maxWidth) take = take.slice(0, -1);
+          if (take.length < rest.length && out.length === maxLines - 1) {
+            while (take.length > 1 && ctx.measureText(take + '…').width > maxWidth) take = take.slice(0, -1);
+            out.push(take + '…');
+            return out;
+          }
+          out.push(take);
+          rest = rest.slice(take.length);
+        }
+        return out;
+      };
       const cardFields = this.state.data.settings.cardFields || {};
       const tagMap = {};
       (this.state.data.settings.tags || []).forEach(function (t) { tagMap[t.id] = t; });
@@ -5442,7 +5460,7 @@ button.date-row:active { transform: scale(.997); }
       const xs = [];
       let x = pad + 16;
       cols.forEach(function (w, i) { xs.push(x); x += w; });
-      const heads = ['床号', '姓名', '主诊断', '手术及日期', '待办'];
+      const heads = ['床号', '姓名', '主诊断', '手术及日期', '待办', '备注'];
       heads.forEach(function (h, i) { text(h, xs[i], top + headerH / 2, 20, '#475569', 700); });
       // 行
       items.forEach(function (it, i) {
@@ -5477,6 +5495,11 @@ button.date-row:active { transform: scale(.997); }
         text(fit(adm.diagnosis || '—', cols[2] - 18, 19, 400), xs[2], y + rowH / 2, 19, '#334155');
         text(fit(surgery, cols[3] - 18, 18, 400), xs[3], y + rowH / 2, 18, '#334155');
         text(fit(todo, cols[4] - 18, 19, 600), xs[4], y + rowH / 2, 19, task && task.status === 'overdue' ? '#dc2626' : '#0f766e', 600);
+        const noteLines = wrap(p.notes || '', cols[5] - 18, 16, 400, 2);
+        if (noteLines.length) {
+          const ny = y + rowH / 2 - (noteLines.length - 1) * 11;
+          noteLines.forEach(function (line, ni) { text(line, xs[5], ny + ni * 22, 16, '#475569'); });
+        }
       });
       // 底线/页脚
       const fy = top + headerH + items.length * rowH;
