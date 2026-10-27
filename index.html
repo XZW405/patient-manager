@@ -587,7 +587,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.28.0035';</script>
+<script>window.APP_VERSION = 'v2026.10.28.0042';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -3112,10 +3112,8 @@ button.date-row:active { transform: scale(.997); }
   };
 
   // ---------- 设置 ----------
-  Views.settings = function (app) {
+  Views.settingsDetail = function (app) {
     const s = app.state.data.settings;
-    const meta = app.state.data.meta;
-    const discharged = app.dischargedList();
     const teacherRows = (s.teachers || []).map(function (t) {
       return '<div class="list-row"><input type="text" class="teacher-name" data-id="' + esc(t.id) + '" value="' + esc(t.name) + '">' +
         '<input type="color" class="color-input teacher-color" data-id="' + esc(t.id) + '" value="' + esc(t.color || '#7c3aed') + '">' +
@@ -3176,8 +3174,10 @@ button.date-row:active { transform: scale(.997); }
       '<span class="timeline-rule">患者单独安排 · 终点</span><span class="timeline-date">终点</span></div>' +
       '<p class="small muted timeline-note">按手术日 D0 排。当前会生成 <b>' + dressingSteps.length + '</b> 次换药；每一次都可以单独改间隔。实际出院日更早时，以出院日为终点。</p>';
 
-    return '<div class="page-head"><div><h1>设置</h1><div class="sub">设备 ' + esc((meta.deviceId || '').slice(0, 8)) + ' · 上次备份 ' + esc(meta.lastBackupAt ? root.UI.fmtDateTime(meta.lastBackupAt) : '从未') + '</div></div></div>' +
+    return '<div class="detail-back-row"><button class="back-icon" data-act="settings-back" aria-label="返回设置">←</button>' +
+      '<div class="detail-title"><h1>详细设置</h1></div></div>' +
       '<div class="settings">' +
+      '<p class="small muted">时间轴、带教老师、标签、快捷项、任务顺序、卡片显示都在这里；保存后回设置。</p>' +
       '<section class="card"><h2>默认任务时间轴</h2><form id="settings-form">' +
       '<p class="small muted">完整时间轴：从备术到出院。换药一从拔管日算，换药二从换药一算，以此类推。</p>' +
       '<div class="timeline-editor">' + timelineRows + '</div>' +
@@ -3203,6 +3203,32 @@ button.date-row:active { transform: scale(.997); }
       '<div class="switch-row"><span>备注</span><label class="check"><input type="checkbox" name="cardNotes"' + (s.cardFields.notes ? ' checked' : '') + '>显示</label></div>' +
       '<div class="form-actions"><button type="button" class="btn primary" data-act="save-settings">保存设置</button></div>' +
       '</form></section>' +
+      '</div>';
+  };
+
+
+  // ---------- 设置主页（摘要） / 详细设置子页 ----------
+  Views.settings = function (app) {
+    const s = app.state.data.settings;
+    const meta = app.state.data.meta;
+    const discharged = app.dischargedList();
+    const steps = root.Engine.dressingTimeline(s);
+    const preop = s.preopOffset != null ? s.preopOffset : 1;
+    const drain = s.drainOffset != null ? s.drainOffset : 1;
+    const stitch = s.stitchOffset != null ? s.stitchOffset : 14;
+    return '<div class="page-head"><div><h1>设置</h1><div class="sub">设备 ' + esc((meta.deviceId || '').slice(0, 8)) + ' · 上次备份 ' + esc(meta.lastBackupAt ? root.UI.fmtDateTime(meta.lastBackupAt) : '从未') + '</div></div></div>' +
+      '<div class="settings">' +
+      '<section class="card"><div class="card-head"><h2>详细设置</h2>' +
+      '<button class="btn small ghost" data-act="settings-section" data-value="detail">展开</button></div>' +
+      '<p class="small muted">任务时间轴、带教老师、标签、常用诊断/术式、任务顺序、卡片显示。</p>' +
+      '<div class="small muted" style="margin-top:8px;line-height:1.7">' +
+      '<div>时间轴：备术 D-' + esc(preop) + ' · 拔管 D+' + esc(drain) + ' · 换药 ' + steps.length + ' 次 · 拆线 D+' + esc(stitch) + '</div>' +
+      '<div>带教 ' + (s.teachers || []).length + ' 位 · 标签 ' + (s.tags || []).length + ' 个 · 快捷诊断 ' + app.quickDiagnoses().length + ' / 术式 ' + app.quickSurgeries().length + '</div>' +
+      '<div>卡片显示：老师 / 标签 / 性别年龄 / 身高 / 入院日期 / 备注</div></div>' +
+      '</section>' +
+      '<section class="card"><div class="card-head"><h2>已出院<span class="small muted" style="margin-left:4px">' + discharged.length + ' 人</span></h2>' +
+      '<button class="btn small ghost" data-act="settings-section" data-value="discharged">查看</button></div>' +
+      '<p class="small muted">已归档患者单独一层；进入后可改回在院或删除。</p></section>' +
       '<section class="card"><h2>备份 / 同步 / 导出</h2>' +
       '<p class="small muted">JSON 备份不含照片；手动同步包包含数据 + 照片；xlsx 只导出表格。</p>' +
       '<div class="row">' +
@@ -3215,16 +3241,8 @@ button.date-row:active { transform: scale(.997); }
       '<button class="btn primary" data-act="xlsx-export">导出 .xlsx</button>' +
       '<button class="btn" data-act="table-image">导出患者表格大图</button>' +
       '</div>' +
-      '<p class="small faint" style="margin-top:8px">患者表格大图按当前患者页表格模式导出，一张长图，底部附上次改动时间；筛选和搜索会影响导出范围。</p>' +
+      '<p class="small faint" style="margin-top:8px">患者表格大图按当前患者页表格模式导出，一张长图，含备注列，底部附上次改动时间；筛选和搜索会影响导出范围。</p>' +
       '<div class="small muted" style="margin-top:8px">上次同步：' + esc(meta.lastSyncAt ? root.UI.fmtDateTime(meta.lastSyncAt) : '从未') + '</div>' +
-      '</section>' +
-      '<section class="card"><h2>已出院 <span class="small muted">' + discharged.length + ' 人</span></h2>' +
-      (discharged.length ? discharged.map(function (it) {
-        return '<div class="list-row"><span>' + esc(it.adm.bed) + ' · ' + esc(it.patient.name) + '</span>' +
-          '<span class="small muted">' + esc(it.adm.diagnosis || '') + '</span>' +
-          '<button class="btn small good" data-act="restore" data-id="' + esc(it.adm.id) + '">改回在院</button>' +
-          '<button class="btn small danger" data-act="delete-admission" data-id="' + esc(it.adm.id) + '">删除</button></div>';
-      }).join('') : '<div class="faint small">没有已出院记录。</div>') +
       '</section>' +
       '<section class="card"><h2>演示与危险操作</h2>' +
       '<div class="row"><button class="btn" data-act="demo-load">载入示例数据</button>' +
@@ -3243,6 +3261,21 @@ button.date-row:active { transform: scale(.997); }
       '<p class="small muted" style="margin-top:10px">数据只在本机 IndexedDB；首次加载需联网，之后离线可用。换设备用同步包手动迁移。</p>' +
       '</section>' +
       '</div>';
+  };
+
+  Views.settingsDischarged = function (app) {
+    const list = app.dischargedList();
+    return '<div class="detail-back-row"><button class="back-icon" data-act="settings-back" aria-label="返回设置">←</button>' +
+      '<div class="detail-title"><h1>已出院</h1><span class="small muted">' + list.length + ' 人</span></div></div>' +
+      '<div class="settings"><section class="card"><h2>已归档患者</h2>' +
+      '<p class="small muted">归档后患者只在这里出现；可改回在院或删除。</p>' +
+      (list.length ? list.map(function (it) {
+        return '<div class="list-row"><span>' + esc(it.adm.bed) + ' · ' + esc(it.patient.name) + '</span>' +
+          '<span class="small muted">' + esc(it.adm.diagnosis || '') + '</span>' +
+          '<button class="btn small good" data-act="restore" data-id="' + esc(it.adm.id) + '">改回在院</button>' +
+          '<button class="btn small danger" data-act="delete-admission" data-id="' + esc(it.adm.id) + '">删除</button></div>';
+      }).join('') : '<div class="faint small">没有已出院记录。</div>') +
+      '</section></div>';
   };
 
   root.Views = Views;
@@ -3280,7 +3313,8 @@ button.date-row:active { transform: scale(.997); }
       dev: false,
       readOnly: false,
       photoUrls: {},
-      photoTarget: null
+      photoTarget: null,
+      settingsSection: ''
     },
 
     // ---------- 初始化 ----------
@@ -3531,6 +3565,16 @@ button.date-row:active { transform: scale(.997); }
           this.state.page = 'overview';
           this.render(); break;
         case 'save-settings': this.saveSettings(); break;
+        case 'settings-section':
+          this.state.settingsSection = el.getAttribute('data-value') || '';
+          this.render();
+          root.scrollTo(0, 0);
+          break;
+        case 'settings-back':
+          this.state.settingsSection = '';
+          this.render();
+          root.scrollTo(0, 0);
+          break;
         case 'add-teacher': this.addTeacherRow(); break;
         case 'remove-teacher': this.removeRow(el); break;
         case 'add-tag': this.addTagRow(); break;
@@ -3585,7 +3629,11 @@ button.date-row:active { transform: scale(.997); }
       else if (page === 'pending') content = Views.pending(this);
       else if (page === 'detail') content = Views.detail(this);
       else if (page === 'intake') content = Views.intake(this);
-      else if (page === 'settings') content = Views.settings(this);
+      else if (page === 'settings') {
+        if (this.state.settingsSection === 'detail') content = Views.settingsDetail(this);
+        else if (this.state.settingsSection === 'discharged') content = Views.settingsDischarged(this);
+        else content = Views.settings(this);
+      }
       else content = Views.overview(this);
 
       return '<div class="app">' +
@@ -3617,6 +3665,7 @@ button.date-row:active { transform: scale(.997); }
     },
 
     go(page, id) {
+      this.state.settingsSection = '';
       this.state.page = page;
       if (id) this.state.selectedId = id;
       if (page !== 'intake') this.state.intake = null;
