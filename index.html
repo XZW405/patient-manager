@@ -593,7 +593,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.28.0109';</script>
+<script>window.APP_VERSION = 'v2026.10.28.0117';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -5576,24 +5576,24 @@ button.date-row:active { transform: scale(.997); }
         diagnosis: '主诊断', surgery: '手术及日期', todo: '待办'
       };
       const weights = {
-        bed: 1.1, name: 1.5, teacher: 0.9, tags: 1.0, sexAge: 1.05, height: 0.95,
-        admissionDate: 1.1, notes: 2.1, diagnosis: 2.5, surgery: 2.2, todo: 1.5
+        bed: 1.4, name: 1.4, teacher: 1.2, tags: 1.1, sexAge: 1.0, height: 0.9,
+        admissionDate: 1.05, notes: 2.0, diagnosis: 2.3, surgery: 2.0, todo: 1.4
       };
       const tableFields = this.tableFields();
       const extra = this.tableFieldOrder().filter(function (k) { return tableFields[k]; });
       const keys = ['bed', 'name'].concat(extra).concat(['diagnosis', 'surgery', 'todo']);
       const weightsTotal = keys.reduce(function (n, k) { return n + (weights[k] || 1); }, 0);
-      const W = 2200 + extra.length * 80;
-      const pad = 56;
-      const top = 150;
-      const headerH = 80;
+      const W = 1800 + extra.length * 40;
+      const pad = 44;
+      const top = 136;
+      const headerH = 76;
       const rowH = 104;
-      const footerH = 110;
+      const footerH = 104;
       const contentW = W - pad * 2;
-      const unit = (contentW - 20) / weightsTotal;
+      const unit = (contentW - 16) / weightsTotal;
       const cols = keys.map(function (k) { return (weights[k] || 1) * unit; });
       const xs = [];
-      let x = pad + 20;
+      let x = pad + 16;
       cols.forEach(function (w) { xs.push(x); x += w; });
       const height = top + headerH + items.length * rowH + footerH;
       const canvas = document.createElement('canvas');
@@ -5640,14 +5640,14 @@ button.date-row:active { transform: scale(.997); }
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, W, height);
-      text('患者列表', pad, 58, 56, '#0f172a', 750);
-      text('表格模式 · ' + UI.fmtDateFull(today) + ' · ' + items.length + ' 人', pad, 104, 28, '#64748b');
+      text('患者列表', pad, 58, 58, '#0f172a', 750);
+      text('表格模式 · ' + UI.fmtDateFull(today) + ' · ' + items.length + ' 人', pad, 104, 30, '#64748b');
       ctx.fillStyle = '#0f766e';
-      ctx.fillRect(pad, 128, 112, 5);
+      ctx.fillRect(pad, 124, 118, 5);
       ctx.fillStyle = '#f1f5f9';
       ctx.fillRect(pad, top, W - pad * 2, headerH);
       keys.forEach(function (key, i) {
-        text(labels[key], xs[i], top + headerH / 2, 30, '#475569', 700);
+        text(fit(labels[key], cols[i] - 12, 30, 700), xs[i], top + headerH / 2, 30, '#475569', 700);
       });
       items.forEach(function (it, i) {
         const y = top + headerH + i * rowH;
@@ -5666,7 +5666,9 @@ button.date-row:active { transform: scale(.997); }
         const sd = adm.surgeryDate || '';
         const dn = sd ? Engine.diffDays(sd, today) : null;
         const post = dn == null ? '' : (dn === 0 ? '手术日' : (dn > 0 ? '术前' + dn + '天' : '术后' + (-dn) + '天'));
-        const surgery = [adm.surgeryName || '', sd ? UI.fmtDate(sd) : '', post].filter(Boolean).join(' · ') || '未定手术';
+        const surgeryName = adm.surgeryName || '';
+        const surgeryDatePost = [sd ? UI.fmtDate(sd) : '', post].filter(Boolean).join(' · ');
+        const surgery = [surgeryName, surgeryDatePost].filter(Boolean).join(' · ') || '未定手术';
         const task = it.task;
         let todo = '—';
         if (task) {
@@ -5691,17 +5693,22 @@ button.date-row:active { transform: scale(.997); }
           surgery: surgery,
           todo: todo
         };
-        const sizes = { bed: 32, name: 30, teacher: 28, tags: 26, sexAge: 28, height: 28, admissionDate: 26, diagnosis: 28, surgery: 26, todo: 28, notes: 24 };
+        const sizes = { bed: 34, name: 34, teacher: 30, tags: 28, sexAge: 30, height: 30, admissionDate: 28, diagnosis: 32, surgery: 30, todo: 30, notes: 28 };
         keys.forEach(function (key, ci) {
           if (key === 'notes') {
-            const lines = wrap(values[key], cols[ci] - 20, 24, 400, 2);
-            const ny = y + rowH / 2 - (lines.length - 1) * 15;
-            lines.forEach(function (line, li) { text(line, xs[ci], ny + li * 30, 24, '#475569'); });
+            const lines = wrap(values[key], cols[ci] - 18, 28, 400, 2);
+            const ny = y + rowH / 2 - (lines.length - 1) * 17;
+            lines.forEach(function (line, li) { text(line, xs[ci], ny + li * 34, 28, '#475569'); });
+            return;
+          }
+          if (key === 'surgery' && surgeryName) {
+            text(fit(surgeryName, cols[ci] - 18, 30, 400), xs[ci], y + rowH / 2 - 17, 30, '#334155');
+            if (surgeryDatePost) text(fit(surgeryDatePost, cols[ci] - 18, 26, 400), xs[ci], y + rowH / 2 + 18, 26, '#64748b');
             return;
           }
           const color = key === 'bed' ? '#0f766e' : (key === 'todo' ? (task && task.status === 'overdue' ? '#dc2626' : '#0f766e') : '#334155');
           const weight = key === 'bed' ? 750 : (key === 'name' ? 650 : (key === 'todo' ? 650 : 400));
-          text(fit(values[key], cols[ci] - 20, sizes[key], weight), xs[ci], y + rowH / 2, sizes[key], color, weight);
+          text(fit(values[key], cols[ci] - 18, sizes[key], weight), xs[ci], y + rowH / 2, sizes[key], color, weight);
         });
       });
       const fy = top + headerH + items.length * rowH;
@@ -5710,9 +5717,9 @@ button.date-row:active { transform: scale(.997); }
       ctx.moveTo(pad, fy);
       ctx.lineTo(W - pad, fy);
       ctx.stroke();
-      text('上次改动：' + lastLabel, pad, fy + 48, 28, '#475569', 600);
+      text('上次改动：' + lastLabel, pad, fy + 46, 28, '#475569', 600);
       ctx.textAlign = 'right';
-      text(root.APP_VERSION || 'dev', W - pad, fy + 48, 26, '#94a3b8', 500);
+      text(root.APP_VERSION || 'dev', W - pad, fy + 46, 26, '#94a3b8', 500);
       ctx.textAlign = 'left';
       canvas.toBlob(function (blob) {
         if (!blob) { UI.toast('图片生成失败'); return; }
