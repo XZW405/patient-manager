@@ -274,6 +274,15 @@ a { color: var(--accent); }
 .pc-status { margin-left: auto; }
 .pc-diag { font-size: 12px; color: var(--text); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .pc-surgery { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-note { font-size: 11px; color: var(--muted); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.task-patient { border: 1px solid var(--border); background: var(--bg); border-radius: 12px; padding: 10px 11px; margin-bottom: 12px; display: grid; gap: 4px; }
+.task-patient-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.task-patient-head .bed { color: var(--accent); font-weight: 800; }
+.task-patient-name { font-size: 16px; font-weight: 750; }
+.task-patient-line { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.task-patient-line b { color: var(--text); font-weight: 650; margin-right: 3px; }
+.task-patient .pc-tags { margin-left: 0; }
+.task-detail-btn { margin-left: auto; }
 .pc-bottom { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
 .pc-tags { display: flex; gap: 3px; flex-wrap: wrap; margin-left: auto; }
 .patient-card .teacher-badge { width: 20px; height: 20px; font-size: 10px; }
@@ -578,7 +587,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.23.0032';</script>
+<script>window.APP_VERSION = 'v2026.10.28.0021';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -2106,7 +2115,8 @@ button.date-row:active { transform: scale(.997); }
         tags: true,
         sexAge: false,
         height: false,
-        admissionDate: false
+        admissionDate: false,
+        notes: false
       },
       schemaVersion: 1,
       updatedAt: t
@@ -2702,7 +2712,9 @@ button.date-row:active { transform: scale(.997); }
     const data = app.tasksOnDate(date);
     const dn = root.Engine.diffDays(date, app.state.today);
     const rel = dn === 0 ? '今天' : (dn > 0 ? dn + ' 天后' : '过去 ' + (-dn) + ' 天');
-    const expected = data.expected.map(function (x) {
+    const labels = root.Engine.CATEGORY_LABELS;
+
+    const expectedRow = function (x) {
       const t = x.task;
       const status = x.complete ? (t.status === 'not_needed' ? '不再需要' : '已完成') : (t.type === 'surgery' ? '手术' : (dn === 0 ? '今天' : (dn < 0 ? '未完成' : '预期')));
       const cls = t.type === 'discharge' ? ' discharge' : (x.complete ? ' completed' : '');
@@ -2712,7 +2724,29 @@ button.date-row:active { transform: scale(.997); }
         '<span class="date-status">' + esc(status) + '</span>';
       if (x.freeOnly || !x.adm.id) return '<div class="date-row' + cls + '">' + body + '</div>';
       return '<button class="date-row' + cls + '" data-act="detail" data-id="' + esc(x.adm.id) + '">' + body + '</button>';
-    }).join('') || '<div class="empty"><h3>这一天没有预期任务</h3><p>可以换一天，或到患者详情里补任务。</p></div>';
+    };
+
+    const grouped = {};
+    data.expected.forEach(function (x) {
+      const cat = x.task.category || (x.task.type === 'surgery' ? 'surgery' : (x.freeOnly ? 'free' : 'other'));
+      (grouped[cat] = grouped[cat] || []).push(x);
+    });
+    const order = app.taskOrder().concat(['free', 'other']);
+    const cats = order.filter(function (cat, i) { return order.indexOf(cat) === i && (grouped[cat] || []).length > 0; });
+    const expected = cats.map(function (cat) {
+      const rows = grouped[cat].slice().sort(function (a, b) {
+        const bed = root.Engine.compareBed(a.adm.bed, b.adm.bed);
+        if (bed) return bed;
+        return String(a.task.label).localeCompare(String(b.task.label), 'zh-Hans-CN');
+      });
+      const open = rows.filter(function (x) { return !x.complete; }).length;
+      const done = rows.length - open;
+      return '<section class="ov-group ' + cat + ' date-group"><div class="ov-title"><span>' +
+        esc(labels[cat] || cat) + '</span><span class="count">' +
+        (open ? open + ' 项待办' : '') + (done ? (open ? ' · ' : '') + done + ' 项已完成' : '') +
+        '</span></div><div class="date-list">' + rows.map(expectedRow).join('') + '</div></section>';
+    }).join('');
+
     const records = data.records.map(function (x) {
       return '<div class="date-row">' +
         '<span class="date-bed">' + esc(x.adm.bed || '') + '</span>' +
@@ -2721,6 +2755,7 @@ button.date-row:active { transform: scale(.997); }
         '<button class="btn small ghost" data-act="edit-event" data-event="' + esc(x.h.eventId || x.h.id) + '">编辑</button>' +
         '</div>';
     }).join('') || '<div class="empty"><h3>这一天没有记录</h3><p>在患者详情完成的动作会出现在这里。</p></div>';
+
     return '<div class="page-head"><div><h1>任务</h1><div class="sub">' + esc(date) + ' ' + esc(root.UI.weekday(date)) +
       ' · ' + esc(rel) + ' · 在院 ' + data.inHospital + ' 人</div></div>' +
       '<div class="page-actions">' +
@@ -2728,10 +2763,11 @@ button.date-row:active { transform: scale(.997); }
       '<button class="btn small ghost" data-act="task-date">日期</button>' +
       '<button class="btn plus add-accent" data-act="free-todo" aria-label="加自由待办" title="加自由待办">+</button>' +
       '</div></div>' +
-      '<section class="ov-group date-group"><div class="ov-title"><span>当天预期任务</span><span class="count">' + data.expected.length + ' 项</span></div>' +
-      '<div class="date-list">' + expected + '</div></section>' +
+      '<div class="ov-groups">' +
+      (expected || '<div class="empty"><h3>这一天没有预期任务</h3><p>可以换一天，或到患者详情里补任务。</p></div>') +
       '<section class="ov-group date-group"><div class="ov-title"><span>当天记录</span><span class="count">' + data.records.length + ' 项</span></div>' +
-      '<div class="date-list">' + records + '</div></section>';
+      '<div class="date-list">' + records + '</div></section>' +
+      '</div>';
   };
 
   // ---------- 患者列表 ----------
@@ -2833,6 +2869,7 @@ button.date-row:active { transform: scale(.997); }
         if (cf.height && it.patient.height != null && it.patient.height !== '') bits.push(it.patient.height + ' cm');
         if (cf.admissionDate && it.adm.admissionDate) bits.push('入院 ' + root.UI.fmtDate(it.adm.admissionDate));
         const meta = bits.length ? '<div class="pc-surgery">' + esc(bits.join(' · ')) + '</div>' : '';
+        const note = cf.notes && it.patient.notes ? '<div class="pc-note">备注：' + esc(it.patient.notes) + '</div>' : '';
         const reached = !!(it.adm.dischargeDate && it.adm.dischargeDate <= app.state.today);
         return '<button class="patient-card' + (reached ? ' discharged' : '') + '" data-act="detail" data-id="' + esc(it.adm.id) + '">' +
           '<div class="pc-top">' +
@@ -2840,7 +2877,7 @@ button.date-row:active { transform: scale(.997); }
           '<span class="pc-name">' + esc(it.patient.name) + '</span></div>' +
           '<div class="pc-diag">' + esc(it.adm.diagnosis || '未填主诊断') + '</div>' +
           '<div class="pc-surgery">' + esc(surgeryLine(app, it.adm)) + '</div>' +
-          meta +
+          meta + note +
           '<div class="pc-bottom">' + todayBadges(it.todayTasks) +
           (tg ? '<span class="pc-tags">' + tg + '</span>' : '') + '</div>' +
           '</button>';
@@ -3163,6 +3200,7 @@ button.date-row:active { transform: scale(.997); }
       '<div class="switch-row"><span>性别年龄</span><label class="check"><input type="checkbox" name="cardSexAge"' + (s.cardFields.sexAge ? ' checked' : '') + '>显示</label></div>' +
       '<div class="switch-row"><span>身高</span><label class="check"><input type="checkbox" name="cardHeight"' + (s.cardFields.height ? ' checked' : '') + '>显示</label></div>' +
       '<div class="switch-row"><span>入院日期</span><label class="check"><input type="checkbox" name="cardAdmissionDate"' + (s.cardFields.admissionDate ? ' checked' : '') + '>显示</label></div>' +
+      '<div class="switch-row"><span>备注</span><label class="check"><input type="checkbox" name="cardNotes"' + (s.cardFields.notes ? ' checked' : '') + '>显示</label></div>' +
       '<div class="form-actions"><button type="button" class="btn primary" data-act="save-settings">保存设置</button></div>' +
       '</form></section>' +
       '<section class="card"><h2>备份 / 同步 / 导出</h2>' +
@@ -3175,7 +3213,9 @@ button.date-row:active { transform: scale(.997); }
       '<button class="btn" data-act="photos-export">导出照片 ZIP</button>' +
       '<button class="btn" data-act="photos-import">导入照片 ZIP</button>' +
       '<button class="btn primary" data-act="xlsx-export">导出 .xlsx</button>' +
+      '<button class="btn" data-act="table-image">导出患者表格大图</button>' +
       '</div>' +
+      '<p class="small faint" style="margin-top:8px">患者表格大图按当前患者页表格模式导出，一张长图，底部附上次改动时间；筛选和搜索会影响导出范围。</p>' +
       '<div class="small muted" style="margin-top:8px">上次同步：' + esc(meta.lastSyncAt ? root.UI.fmtDateTime(meta.lastSyncAt) : '从未') + '</div>' +
       '</section>' +
       '<section class="card"><h2>已出院 <span class="small muted">' + discharged.length + ' 人</span></h2>' +
@@ -3429,6 +3469,11 @@ button.date-row:active { transform: scale(.997); }
         case 'delete-admission': this.deleteAdmission(adId); break;
         case 'detail': this.go('detail', adId); break;
         case 'tasks': this.openTasks(adId, el.getAttribute('data-type') || ''); break;
+        case 'task-detail': {
+          document.querySelectorAll('.sheet-backdrop').forEach((x) => x.remove());
+          this.go('detail', el.getAttribute('data-id'));
+          break;
+        }
         case 'task-action': this.doTaskAction(adId, el); break;
         case 'task-plan': this.openTaskPlan(adId, el.getAttribute('data-type')); break;
         case 'free-todo': this.openFreeTodo(el.getAttribute('data-admission') || '', el.getAttribute('data-id') || ''); break;
@@ -3504,6 +3549,7 @@ button.date-row:active { transform: scale(.997); }
         case 'photos-export': this.exportPhotos(); break;
         case 'photos-import': this.importPhotos(); break;
         case 'xlsx-export': this.exportXlsx(); break;
+        case 'table-image': this.exportTableImage(); break;
         case 'demo-load': this.seedDemo(); break;
         case 'clear-all': this.clearAll(); break;
         default: break;
@@ -3549,7 +3595,7 @@ button.date-row:active { transform: scale(.997); }
         '<nav class="nav">' + navHtml + '</nav>' +
         '</div></header>' +
         '<main class="page">' + content + '</main>' +
-        '<div class="version">' + UI.esc(root.APP_VERSION || 'dev') + ' · 本机数据</div>' +
+        '<div class="version">' + UI.esc(root.APP_VERSION || 'dev') + ' · 上次改动 ' + UI.esc(this.lastChangedLabel()) + ' · 本机数据</div>' +
         '</div>';
     },
 
@@ -3610,6 +3656,29 @@ button.date-row:active { transform: scale(.997); }
     primaryOf(res) {
       return res.current[0] || null;
     },
+    lastChangedAt() {
+      const d = this.state.data || {};
+      let max = '';
+      const scan = function (list) {
+        (list || []).forEach(function (x) {
+          if (!x) return;
+          const t = x.updatedAt || x.createdAt || '';
+          if (t > max) max = t;
+        });
+      };
+      scan(d.patients);
+      scan(d.admissions);
+      scan(d.events);
+      scan(d.freeTodos);
+      scan(d.attachments);
+      scan([d.settings]);
+      if (d.meta && d.meta.lastImportAt && d.meta.lastImportAt > max) max = d.meta.lastImportAt;
+      return max;
+    },
+    lastChangedLabel() {
+      const t = this.lastChangedAt();
+      return t ? UI.fmtDateTime(t) : '从未';
+    },
     overview() {
       return Engine.buildOverview(this.state.data.admissions, this.state.data.patients,
         this.state.data.events, this.state.data.freeTodos, this.state.data.settings, this.state.today);
@@ -3635,7 +3704,7 @@ button.date-row:active { transform: scale(.997); }
           expected.push({ adm: adm, patient: patient, task: task, complete: task.status === 'done' || task.status === 'not_needed' });
         });
         if (adm.surgeryDate === d) {
-          expected.push({ adm: adm, patient: patient, surgery: true, task: { type: 'surgery', label: '手术', dueDate: d, status: 'surgery' } });
+          expected.push({ adm: adm, patient: patient, surgery: true, task: { type: 'surgery', label: '手术', category: 'surgery', dueDate: d, status: 'surgery' } });
         }
         const ctx = this.context(adm.id);
         const hist = ctx ? ctx.res.history : [];
@@ -3655,7 +3724,7 @@ button.date-row:active { transform: scale(.997); }
         expected.push({
           adm: { id: '', patientId: '', bed: '' }, patient: { name: '自由待办' },
           freeOnly: true,
-          task: { type: 'free', label: f.title || '待办', dueDate: d, status: complete ? 'done' : 'pending', freeTodoId: f.id },
+          task: { type: 'free', label: f.title || '待办', category: 'free', dueDate: d, status: complete ? 'done' : 'pending', freeTodoId: f.id },
           complete: complete
         });
       });
@@ -4471,7 +4540,31 @@ button.date-row:active { transform: scale(.997); }
       const title = onlyType && actionable.length === 1
         ? '处理待办 · ' + actionable[0].label
         : '处理待办 · ' + ctx.adm.bed + ' ' + ctx.patient.name;
-      const body = '<div class="grid2">' +
+      const p = ctx.patient || {};
+      const adm = ctx.adm;
+      const tagMap = {};
+      ((this.state.data.settings.tags || [])).forEach(function (t) { tagMap[t.id] = t; });
+      const tagHtml = (p.tags || []).map(function (id) {
+        const t = tagMap[id];
+        return t ? '<span class="tag" style="background:' + UI.esc(t.color || '#64748b') + '">' + UI.esc(t.label) + '</span>' : '';
+      }).join('');
+      const surgeryDay = adm.surgeryDate ? Engine.diffDays(this.state.today, adm.surgeryDate) : null;
+      const postop = surgeryDay == null ? '未排手术' :
+        (surgeryDay === 0 ? '手术日' : (surgeryDay > 0 ? '术后 ' + surgeryDay + ' 天' : '术前 ' + (-surgeryDay) + ' 天'));
+      const teacher = this.teacherName(adm.teacherId);
+      const info = '<div class="task-patient">' +
+        '<div class="task-patient-head"><span class="bed">' + UI.esc(adm.bed || '—') + '</span>' +
+        '<span class="task-patient-name">' + UI.esc(p.name || '—') + '</span>' +
+        (tagHtml ? '<span class="pc-tags">' + tagHtml + '</span>' : '') +
+        '<button class="btn small ghost task-detail-btn" data-act="task-detail" data-id="' + UI.esc(adm.id) + '">详情</button></div>' +
+        '<div class="task-patient-line"><b>主诊断</b> ' + UI.esc(adm.diagnosis || '—') + '</div>' +
+        '<div class="task-patient-line"><b>术式</b> ' + UI.esc(adm.surgeryName || '—') +
+        ' <b>手术日期</b> ' + UI.esc(adm.surgeryDate ? UI.fmtDateFull(adm.surgeryDate) : '未定') +
+        ' · ' + UI.esc(postop) + '</div>' +
+        '<div class="task-patient-line"><b>带教</b> ' + UI.esc(teacher) +
+        (adm.admissionDate ? ' <b>入院</b> ' + UI.esc(UI.fmtDateFull(adm.admissionDate)) : '') + '</div>' +
+        '</div>';
+      const body = info + '<div class="grid2">' +
         '<div class="field"><label>操作日期（补录可改）</label><input id="task-date" type="date" value="' + UI.esc(this.state.today) + '"></div>' +
         '<div class="field"><label>备注（可选）</label><input id="task-note" placeholder="如上级姓名 / 渗血"></div>' +
         '</div><div class="tasks" style="margin-top:12px">' +
@@ -5013,7 +5106,8 @@ button.date-row:active { transform: scale(.997); }
         tags: fd.get('cardTags') === 'on',
         sexAge: fd.get('cardSexAge') === 'on',
         height: fd.get('cardHeight') === 'on',
-        admissionDate: fd.get('cardAdmissionDate') === 'on'
+        admissionDate: fd.get('cardAdmissionDate') === 'on',
+        notes: fd.get('cardNotes') === 'on'
       };
       s.teachers = Array.from(document.querySelectorAll('#teacher-list .teacher-name')).map((input) => {
         const color = document.querySelector('#teacher-list .teacher-color[data-id="' + input.getAttribute('data-id') + '"]');
@@ -5296,6 +5390,110 @@ button.date-row:active { transform: scale(.997); }
       } catch (err) {
         UI.toast('导入照片失败：' + (err.message || err));
       }
+    },
+
+    async exportTableImage() {
+      const self = this;
+      const today = this.state.today;
+      const lastLabel = this.lastChangedLabel();
+      const items = this.filtered();
+      if (!items.length) { UI.toast('当前没有可导出的患者'); return; }
+      const W = 1500;
+      const pad = 44;
+      const top = 122;
+      const headerH = 62;
+      const rowH = 66;
+      const footerH = 92;
+      const cols = [90, 200, 440, 395, 265];
+      const height = top + headerH + items.length * rowH + footerH;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { UI.toast('浏览器不支持导出图片'); return; }
+      const font = '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", Arial, sans-serif';
+      const text = (s, x, y, size, color, weight) => {
+        ctx.font = (weight || 400) + ' ' + size + 'px ' + font;
+        ctx.fillStyle = color;
+        ctx.fillText(s, x, y);
+      };
+      const fit = (s, maxWidth, size, weight) => {
+        ctx.font = (weight || 400) + ' ' + size + 'px ' + font;
+        let v = String(s == null ? '' : s);
+        if (ctx.measureText(v).width <= maxWidth) return v;
+        while (v.length > 1 && ctx.measureText(v + '…').width > maxWidth) v = v.slice(0, -1);
+        return v + '…';
+      };
+      const cardFields = this.state.data.settings.cardFields || {};
+      const tagMap = {};
+      (this.state.data.settings.tags || []).forEach(function (t) { tagMap[t.id] = t; });
+      const teacherMap = {};
+      (this.state.data.settings.teachers || []).forEach(function (t) { teacherMap[t.id] = t; });
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, W, height);
+      text('患者列表', pad, 52, 34, '#0f172a', 750);
+      text('表格模式 · ' + UI.fmtDateFull(today) + ' · ' + items.length + ' 人', pad, 88, 19, '#64748b');
+      ctx.fillStyle = '#0f766e';
+      ctx.fillRect(pad, 106, 96, 4);
+      // 表头
+      ctx.fillStyle = '#f1f5f9';
+      ctx.fillRect(pad, top, W - pad * 2, headerH);
+      const xs = [];
+      let x = pad + 16;
+      cols.forEach(function (w, i) { xs.push(x); x += w; });
+      const heads = ['床号', '姓名', '主诊断', '手术及日期', '待办'];
+      heads.forEach(function (h, i) { text(h, xs[i], top + headerH / 2, 20, '#475569', 700); });
+      // 行
+      items.forEach(function (it, i) {
+        const y = top + headerH + i * rowH;
+        if (i % 2) {
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(pad, y, W - pad * 2, rowH);
+        }
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad, y + rowH);
+        ctx.lineTo(W - pad, y + rowH);
+        ctx.stroke();
+        const adm = it.adm;
+        const p = it.patient || {};
+        const tagLabels = (p.tags || []).map(function (id) { return tagMap[id] && tagMap[id].label; }).filter(Boolean);
+        const teacher = teacherMap[adm.teacherId] && teacherMap[adm.teacherId].name;
+        const name = (cardFields.teacher && teacher ? '[' + teacher + '] ' : '') + (p.name || '') + (cardFields.tags && tagLabels.length ? '  ' + tagLabels.join(' ') : '');
+        const sd = adm.surgeryDate || '';
+        const dn = sd ? Engine.diffDays(sd, today) : null;
+        const post = dn == null ? '' : (dn === 0 ? '手术日' : (dn > 0 ? '术前' + dn + '天' : '术后' + (-dn) + '天'));
+        const surgery = [adm.surgeryName || '', sd ? UI.fmtDate(sd) : '', post].filter(Boolean).join(' · ') || '未定手术';
+        const task = it.task;
+        let todo = '—';
+        if (task) {
+          const rel = task.status === 'overdue' ? '逾期' + task.overdueDays + '天' : (task.status === 'pending' ? '今天' : (task.relative || ''));
+          todo = task.label + (rel ? ' · ' + rel : '');
+        }
+        text(fit(adm.bed || '—', cols[0] - 18, 20, 700), xs[0], y + rowH / 2, 20, '#0f766e', 700);
+        text(fit(name, cols[1] - 18, 19, 650), xs[1], y + rowH / 2, 19, '#0f172a', 650);
+        text(fit(adm.diagnosis || '—', cols[2] - 18, 19, 400), xs[2], y + rowH / 2, 19, '#334155');
+        text(fit(surgery, cols[3] - 18, 18, 400), xs[3], y + rowH / 2, 18, '#334155');
+        text(fit(todo, cols[4] - 18, 19, 600), xs[4], y + rowH / 2, 19, task && task.status === 'overdue' ? '#dc2626' : '#0f766e', 600);
+      });
+      // 底线/页脚
+      const fy = top + headerH + items.length * rowH;
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.beginPath();
+      ctx.moveTo(pad, fy);
+      ctx.lineTo(W - pad, fy);
+      ctx.stroke();
+      text('上次改动：' + lastLabel, pad, fy + 40, 19, '#475569', 600);
+      ctx.textAlign = 'right';
+      text(root.APP_VERSION || 'dev', W - pad, fy + 40, 18, '#94a3b8', 500);
+      ctx.textAlign = 'left';
+      canvas.toBlob(function (blob) {
+        if (!blob) { UI.toast('图片生成失败'); return; }
+        UI.download('患者表格-' + self.state.today + '.png', blob);
+        UI.toast('患者表格图片已导出');
+      }, 'image/png');
     },
 
     async exportXlsx() {
