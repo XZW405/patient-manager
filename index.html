@@ -251,15 +251,19 @@ a { color: var(--accent); }
 .table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
 .patient-table { width: 100%; min-width: 720px; border-collapse: collapse; }
 .patient-table th, .patient-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
-.patient-table th { font-size: 12px; color: var(--muted); font-weight: 700; background: color-mix(in srgb, var(--bg) 55%, var(--card)); position: sticky; top: 0; }
+.patient-table th { font-size: 12px; color: var(--muted); font-weight: 700; background: color-mix(in srgb, var(--bg) 55%, var(--card)); position: sticky; top: 0; white-space: nowrap; }
 .patient-table tr:last-child td { border-bottom: 0; }
 .patient-table tbody tr { cursor: pointer; }
 .patient-table tbody tr:hover { background: color-mix(in srgb, var(--accent-soft) 30%, var(--card)); }
 .patient-table .bed { font-weight: 800; white-space: nowrap; }
-.patient-table .name { font-weight: 650; }
+.patient-table .name { font-weight: 650; white-space: nowrap; }
 .patient-table .diag { max-width: 180px; }
 .patient-table .surgery { max-width: 190px; }
 .patient-table .todo-cell { white-space: nowrap; }
+.patient-table .teacher-cell { white-space: nowrap; }
+.patient-table .tags-cell .pc-tags { margin-left: 0; }
+.patient-table .sex-age-cell, .patient-table .height-cell, .patient-table .admission-cell { white-space: nowrap; }
+.patient-table .notes-cell { min-width: 150px; max-width: 260px; white-space: pre-wrap; line-height: 1.35; }
 .cards { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
 .cards.single { grid-template-columns: 1fr; }
 .patient-card {
@@ -579,6 +583,8 @@ button.date-row:active { transform: scale(.997); }
 }
 .order-row:last-child { border-bottom: 0; }
 .order-name { flex: 1; font-size: 13px; font-weight: 650; }
+.table-field-name { flex: 1; font-size: 13px; font-weight: 650; }
+.table-field-name input { width: 18px; height: 18px; }
 .order-row .btn { min-width: 38px; padding: 5px 8px; }
 </style>
 </head>
@@ -587,7 +593,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.28.0042';</script>
+<script>window.APP_VERSION = 'v2026.10.28.0109';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -2118,6 +2124,16 @@ button.date-row:active { transform: scale(.997); }
         admissionDate: false,
         notes: false
       },
+      tableFields: {
+        teacher: true,
+        tags: true,
+        sexAge: false,
+        height: false,
+        admissionDate: false,
+        notes: true
+      },
+      tableOrder: ['teacher', 'tags', 'sexAge', 'height', 'admissionDate', 'notes'],
+      tableTagOrder: [],
       schemaVersion: 1,
       updatedAt: t
     };
@@ -2500,9 +2516,12 @@ button.date-row:active { transform: scale(.997); }
     return '<span class="teacher-badge ' + (name === '—' ? 'unassigned' : '') + '" style="' + style + '" title="带教老师：' + esc(name) + '">' + esc(ch) + '</span>';
   }
 
-  function tagsHtml(app, patient) {
+  function tagsHtml(app, patient, order) {
     const ids = (patient && patient.tags) || [];
-    return ids.map(function (id) {
+    const list = Array.isArray(order) && order.length
+      ? order.filter(function (id) { return ids.indexOf(id) >= 0; })
+      : ids;
+    return list.map(function (id) {
       const t = (app.state.data.settings.tags || []).find(function (x) { return x.id === id; });
       if (!t) return '';
       return '<span class="tag" style="background:' + esc(t.color || '#64748b') + '">' + esc(t.label) + '</span>';
@@ -2844,20 +2863,41 @@ button.date-row:active { transform: scale(.997); }
         (total ? '<button class="btn ghost" data-act="filter-reset">重置筛选</button>' : '') +
         '</div>';
     } else if (app.state.listMode === 'table') {
+      const labels = {
+        bed: '床号', name: '姓名', teacher: '带教老师', tags: '标签', sexAge: '性别年龄',
+        height: '身高', admissionDate: '入院日期', notes: '备注',
+        diagnosis: '主诊断', surgery: '手术及日期', todo: '待办'
+      };
+      const tableFields = app.tableFields();
+      const extra = app.tableFieldOrder().filter(function (k) { return tableFields[k]; });
+      const cols = ['bed', 'name'].concat(extra).concat(['diagnosis', 'surgery', 'todo']);
+      const tagOrder = app.tableTagOrder();
+      const cellHtml = function (key, it) {
+        const p = it.patient;
+        const adm = it.adm;
+        if (key === 'bed') return '<td class="bed">' + esc(adm.bed) + '</td>';
+        if (key === 'name') return '<td class="name">' + esc(p.name || '') + '</td>';
+        if (key === 'teacher') return '<td class="teacher-cell">' + teacherBadge(app, adm) + '</td>';
+        if (key === 'tags') return '<td class="tags-cell"><span class="pc-tags">' + tagsHtml(app, p, tagOrder) + '</span></td>';
+        if (key === 'sexAge') {
+          const age = p.age != null && p.age !== '' ? p.age : '—';
+          return '<td class="sex-age-cell">' + esc((p.sex || '—') + ' ' + age) + '</td>';
+        }
+        if (key === 'height') return '<td class="height-cell">' + (p.height != null && p.height !== '' ? esc(p.height) + ' cm' : '—') + '</td>';
+        if (key === 'admissionDate') return '<td class="admission-cell">' + esc(adm.admissionDate ? root.UI.fmtDate(adm.admissionDate) : '—') + '</td>';
+        if (key === 'notes') return '<td class="notes-cell">' + esc(p.notes || '—') + '</td>';
+        if (key === 'diagnosis') return '<td class="diag">' + esc(adm.diagnosis || '—') + '</td>';
+        if (key === 'surgery') return '<td class="surgery">' + esc(surgeryLine(app, adm)) + '</td>';
+        if (key === 'todo') return '<td class="todo-cell">' + todoBadge(it.task) + '</td>';
+        return '<td></td>';
+      };
       const rows = items.map(function (it) {
-        const tb = cf.teacher ? teacherBadge(app, it.adm) : '';
-        const tg = cf.tags ? tagsHtml(app, it.patient) : '';
         return '<tr data-act="detail" data-id="' + esc(it.adm.id) + '">' +
-          '<td class="bed">' + esc(it.adm.bed) + '</td>' +
-          '<td class="name"><div class="row" style="gap:6px">' + tb + '<span>' + esc(it.patient.name) + '</span>' +
-            '<span class="pc-tags">' + tg + '</span></div></td>' +
-          '<td class="diag">' + esc(it.adm.diagnosis || '—') + '</td>' +
-          '<td class="surgery">' + esc(surgeryLine(app, it.adm)) + '</td>' +
-          '<td class="todo-cell">' + todoBadge(it.task) + '</td>' +
+          cols.map(function (key) { return cellHtml(key, it); }).join('') +
           '</tr>';
       }).join('');
       listHtml = '<div class="table-wrap"><table class="patient-table"><thead><tr>' +
-        '<th>床号</th><th>姓名</th><th>主诊断</th><th>手术及日期</th><th>待办</th>' +
+        cols.map(function (key) { return '<th class="col-' + key + '">' + esc(labels[key]) + '</th>'; }).join('') +
         '</tr></thead><tbody>' + rows + '</tbody></table></div>';
     } else {
       listHtml = '<div class="cards">' + items.map(function (it) {
@@ -3143,6 +3183,24 @@ button.date-row:active { transform: scale(.997); }
         '<button type="button" class="btn small ghost" data-act="task-order-up"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
         '<button type="button" class="btn small ghost" data-act="task-order-down"' + (i === arr.length - 1 ? ' disabled' : '') + '>↓</button></div>';
     }).join('');
+    const tableFields = app.tableFields();
+    const tableOrder = app.tableFieldOrder();
+    const tableDefs = {};
+    app.tableFieldDefs().forEach(function (d) { tableDefs[d.key] = d.label; });
+    const tableFieldRows = tableOrder.map(function (k, i, arr) {
+      return '<div class="order-row table-field-row" data-key="' + esc(k) + '">' +
+        '<label class="check table-field-name"><input type="checkbox" class="table-field-check"' + (tableFields[k] ? ' checked' : '') + '> ' + esc(tableDefs[k] || k) + '</label>' +
+        '<button type="button" class="btn small ghost" data-act="table-field-up"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button type="button" class="btn small ghost" data-act="table-field-down"' + (i === arr.length - 1 ? ' disabled' : '') + '>↓</button></div>';
+    }).join('');
+    const tableTagRows = app.tableTagOrder().map(function (id, i, arr) {
+      const t = (s.tags || []).find(function (x) { return x.id === id; });
+      if (!t) return '';
+      return '<div class="order-row" data-tag="' + esc(id) + '">' +
+        '<span class="order-name"><span class="tag" style="background:' + esc(t.color || '#64748b') + '">' + esc(t.label) + '</span></span>' +
+        '<button type="button" class="btn small ghost" data-act="table-tag-up"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button type="button" class="btn small ghost" data-act="table-tag-down"' + (i === arr.length - 1 ? ' disabled' : '') + '>↓</button></div>';
+    }).join('') || '<div class="faint small">设置里先添加标签</div>';
 
     const dLabel = function (n) {
       const v = Number(n) || 0;
@@ -3201,6 +3259,12 @@ button.date-row:active { transform: scale(.997); }
       '<div class="switch-row"><span>身高</span><label class="check"><input type="checkbox" name="cardHeight"' + (s.cardFields.height ? ' checked' : '') + '>显示</label></div>' +
       '<div class="switch-row"><span>入院日期</span><label class="check"><input type="checkbox" name="cardAdmissionDate"' + (s.cardFields.admissionDate ? ' checked' : '') + '>显示</label></div>' +
       '<div class="switch-row"><span>备注</span><label class="check"><input type="checkbox" name="cardNotes"' + (s.cardFields.notes ? ' checked' : '') + '>显示</label></div>' +
+      '<h2 style="margin-top:16px">表格显示</h2>' +
+      '<p class="small muted">选择患者表格模式显示哪些附加列；用 ↑ / ↓ 调整列顺序。床号、姓名、主诊断、手术及日期、待办固定显示。</p>' +
+      '<div id="table-field-list">' + tableFieldRows + '</div>' +
+      '<h3 style="margin-top:14px">表格内标签顺序</h3>' +
+      '<p class="small muted">只影响「标签」列里标签的先后；不勾选标签列时不显示。</p>' +
+      '<div id="table-tag-order">' + tableTagRows + '</div>' +
       '<div class="form-actions"><button type="button" class="btn primary" data-act="save-settings">保存设置</button></div>' +
       '</form></section>' +
       '</div>';
@@ -3213,6 +3277,7 @@ button.date-row:active { transform: scale(.997); }
     const meta = app.state.data.meta;
     const discharged = app.dischargedList();
     const steps = root.Engine.dressingTimeline(s);
+    const tableCount = app.tableFieldOrder().filter(function (k) { return app.tableFields()[k]; }).length;
     const preop = s.preopOffset != null ? s.preopOffset : 1;
     const drain = s.drainOffset != null ? s.drainOffset : 1;
     const stitch = s.stitchOffset != null ? s.stitchOffset : 14;
@@ -3224,7 +3289,8 @@ button.date-row:active { transform: scale(.997); }
       '<div class="small muted" style="margin-top:8px;line-height:1.7">' +
       '<div>时间轴：备术 D-' + esc(preop) + ' · 拔管 D+' + esc(drain) + ' · 换药 ' + steps.length + ' 次 · 拆线 D+' + esc(stitch) + '</div>' +
       '<div>带教 ' + (s.teachers || []).length + ' 位 · 标签 ' + (s.tags || []).length + ' 个 · 快捷诊断 ' + app.quickDiagnoses().length + ' / 术式 ' + app.quickSurgeries().length + '</div>' +
-      '<div>卡片显示：老师 / 标签 / 性别年龄 / 身高 / 入院日期 / 备注</div></div>' +
+      '<div>卡片显示：老师 / 标签 / 性别年龄 / 身高 / 入院日期 / 备注</div>' +
+      '<div>表格显示：' + tableCount + ' 个附加列（床号/姓名/主诊断/手术/待办固定）</div></div>' +
       '</section>' +
       '<section class="card"><div class="card-head"><h2>已出院<span class="small muted" style="margin-left:4px">' + discharged.length + ' 人</span></h2>' +
       '<button class="btn small ghost" data-act="settings-section" data-value="discharged">查看</button></div>' +
@@ -3585,6 +3651,10 @@ button.date-row:active { transform: scale(.997); }
         case 'remove-surgery': this.removeRow(el); break;
         case 'task-order-up': this.moveTaskOrder(el, -1); break;
         case 'task-order-down': this.moveTaskOrder(el, 1); break;
+        case 'table-field-up': this.moveOrderRow(el, -1, 'table-field-list'); break;
+        case 'table-field-down': this.moveOrderRow(el, 1, 'table-field-list'); break;
+        case 'table-tag-up': this.moveOrderRow(el, -1, 'table-tag-order'); break;
+        case 'table-tag-down': this.moveOrderRow(el, 1, 'table-tag-order'); break;
         case 'clear-surgery-date': this.setSurgeryPending(el); break;
         case 'backup-export': this.exportBackup(); break;
         case 'backup-import': this.importBackup(); break;
@@ -4198,6 +4268,42 @@ button.date-row:active { transform: scale(.997); }
     // ---------- 常用诊断 / 术式 / 老师快捷选择 ----------
     taskOrder() {
       return Engine.taskOrderFor(this.state.data.settings);
+    },
+    tableFieldDefs() {
+      return [
+        { key: 'teacher', label: '带教老师' },
+        { key: 'tags', label: '标签' },
+        { key: 'sexAge', label: '性别年龄' },
+        { key: 'height', label: '身高' },
+        { key: 'admissionDate', label: '入院日期' },
+        { key: 'notes', label: '备注' }
+      ];
+    },
+    tableFieldOrder() {
+      const defs = this.tableFieldDefs();
+      const keys = defs.map(function (d) { return d.key; });
+      const raw = Array.isArray(this.state.data.settings.tableOrder) ? this.state.data.settings.tableOrder : keys;
+      const out = [];
+      raw.forEach(function (k) { if (keys.indexOf(k) >= 0 && out.indexOf(k) < 0) out.push(k); });
+      keys.forEach(function (k) { if (out.indexOf(k) < 0) out.push(k); });
+      return out;
+    },
+    tableFields() {
+      const saved = this.state.data.settings.tableFields || {};
+      const defaults = Store.defaultSettings().tableFields;
+      const out = {};
+      this.tableFieldOrder().forEach(function (k) {
+        out[k] = saved[k] == null ? !!defaults[k] : !!saved[k];
+      });
+      return out;
+    },
+    tableTagOrder() {
+      const tags = this.state.data.settings.tags || [];
+      const raw = Array.isArray(this.state.data.settings.tableTagOrder) ? this.state.data.settings.tableTagOrder : [];
+      const out = [];
+      raw.forEach(function (id) { if (tags.some(function (t) { return t.id === id; }) && out.indexOf(id) < 0) out.push(id); });
+      tags.forEach(function (t) { if (out.indexOf(t.id) < 0) out.push(t.id); });
+      return out;
     },
     quickDiagnoses() {
       const s = this.state.data.settings;
@@ -5174,6 +5280,20 @@ button.date-row:active { transform: scale(.997); }
           color: color ? color.value : '#64748b'
         };
       }).filter((t) => t.label);
+      const tableRows = Array.from(document.querySelectorAll('#table-field-list .order-row'));
+      if (tableRows.length) {
+        s.tableOrder = tableRows.map((row) => row.getAttribute('data-key')).filter(Boolean);
+        s.tableFields = {};
+        tableRows.forEach((row) => {
+          const key = row.getAttribute('data-key');
+          const box = row.querySelector('.table-field-check');
+          if (key) s.tableFields[key] = !!(box && box.checked);
+        });
+      }
+      const tableTagRows = Array.from(document.querySelectorAll('#table-tag-order .order-row'));
+      if (tableTagRows.length) {
+        s.tableTagOrder = tableTagRows.map((row) => row.getAttribute('data-tag')).filter(Boolean);
+      }
       s.quickDiagnoses = Array.from(document.querySelectorAll('#diag-list .diag-row')).map((row) => ({
         id: row.getAttribute('data-id'),
         short: (row.querySelector('.diag-short') || {}).value ? row.querySelector('.diag-short').value.trim() : '',
@@ -5210,9 +5330,9 @@ button.date-row:active { transform: scale(.997); }
         '<button type="button" class="btn small ghost" data-act="remove-tag" data-id="' + id + '">删除</button></div>');
     },
 
-    moveTaskOrder(el, dir) {
+    moveOrderRow(el, dir, listId) {
       const row = el.closest('.order-row');
-      const list = document.getElementById('task-order-list');
+      const list = document.getElementById(listId);
       if (!row || !list) return;
       const rows = Array.from(list.querySelectorAll('.order-row'));
       const index = rows.indexOf(row);
@@ -5226,6 +5346,9 @@ button.date-row:active { transform: scale(.997); }
         if (btns[0]) btns[0].disabled = i === 0;
         if (btns[1]) btns[1].disabled = i === after.length - 1;
       });
+    },
+    moveTaskOrder(el, dir) {
+      this.moveOrderRow(el, dir, 'task-order-list');
     },
 
     addDiagRow() {
@@ -5447,13 +5570,31 @@ button.date-row:active { transform: scale(.997); }
       const lastLabel = this.lastChangedLabel();
       const items = this.filtered();
       if (!items.length) { UI.toast('当前没有可导出的患者'); return; }
-      const W = 1800;
-      const pad = 48;
-      const top = 122;
-      const headerH = 62;
-      const rowH = 82;
-      const footerH = 92;
-      const cols = [160, 170, 390, 350, 250, 360];
+      const labels = {
+        bed: '床号', name: '姓名', teacher: '带教老师', tags: '标签', sexAge: '性别年龄',
+        height: '身高', admissionDate: '入院日期', notes: '备注',
+        diagnosis: '主诊断', surgery: '手术及日期', todo: '待办'
+      };
+      const weights = {
+        bed: 1.1, name: 1.5, teacher: 0.9, tags: 1.0, sexAge: 1.05, height: 0.95,
+        admissionDate: 1.1, notes: 2.1, diagnosis: 2.5, surgery: 2.2, todo: 1.5
+      };
+      const tableFields = this.tableFields();
+      const extra = this.tableFieldOrder().filter(function (k) { return tableFields[k]; });
+      const keys = ['bed', 'name'].concat(extra).concat(['diagnosis', 'surgery', 'todo']);
+      const weightsTotal = keys.reduce(function (n, k) { return n + (weights[k] || 1); }, 0);
+      const W = 2200 + extra.length * 80;
+      const pad = 56;
+      const top = 150;
+      const headerH = 80;
+      const rowH = 104;
+      const footerH = 110;
+      const contentW = W - pad * 2;
+      const unit = (contentW - 20) / weightsTotal;
+      const cols = keys.map(function (k) { return (weights[k] || 1) * unit; });
+      const xs = [];
+      let x = pad + 20;
+      cols.forEach(function (w) { xs.push(x); x += w; });
       const height = top + headerH + items.length * rowH + footerH;
       const canvas = document.createElement('canvas');
       canvas.width = W;
@@ -5491,27 +5632,23 @@ button.date-row:active { transform: scale(.997); }
         }
         return out;
       };
-      const cardFields = this.state.data.settings.cardFields || {};
       const tagMap = {};
       (this.state.data.settings.tags || []).forEach(function (t) { tagMap[t.id] = t; });
       const teacherMap = {};
       (this.state.data.settings.teachers || []).forEach(function (t) { teacherMap[t.id] = t; });
+      const tagOrder = this.tableTagOrder();
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, W, height);
-      text('患者列表', pad, 52, 34, '#0f172a', 750);
-      text('表格模式 · ' + UI.fmtDateFull(today) + ' · ' + items.length + ' 人', pad, 88, 19, '#64748b');
+      text('患者列表', pad, 58, 56, '#0f172a', 750);
+      text('表格模式 · ' + UI.fmtDateFull(today) + ' · ' + items.length + ' 人', pad, 104, 28, '#64748b');
       ctx.fillStyle = '#0f766e';
-      ctx.fillRect(pad, 106, 96, 4);
-      // 表头
+      ctx.fillRect(pad, 128, 112, 5);
       ctx.fillStyle = '#f1f5f9';
       ctx.fillRect(pad, top, W - pad * 2, headerH);
-      const xs = [];
-      let x = pad + 16;
-      cols.forEach(function (w, i) { xs.push(x); x += w; });
-      const heads = ['床号', '姓名', '主诊断', '手术及日期', '待办', '备注'];
-      heads.forEach(function (h, i) { text(h, xs[i], top + headerH / 2, 20, '#475569', 700); });
-      // 行
+      keys.forEach(function (key, i) {
+        text(labels[key], xs[i], top + headerH / 2, 30, '#475569', 700);
+      });
       items.forEach(function (it, i) {
         const y = top + headerH + i * rowH;
         if (i % 2) {
@@ -5526,9 +5663,6 @@ button.date-row:active { transform: scale(.997); }
         ctx.stroke();
         const adm = it.adm;
         const p = it.patient || {};
-        const tagLabels = (p.tags || []).map(function (id) { return tagMap[id] && tagMap[id].label; }).filter(Boolean);
-        const teacher = teacherMap[adm.teacherId] && teacherMap[adm.teacherId].name;
-        const name = (cardFields.teacher && teacher ? '[' + teacher + '] ' : '') + (p.name || '') + (cardFields.tags && tagLabels.length ? '  ' + tagLabels.join(' ') : '');
         const sd = adm.surgeryDate || '';
         const dn = sd ? Engine.diffDays(sd, today) : null;
         const post = dn == null ? '' : (dn === 0 ? '手术日' : (dn > 0 ? '术前' + dn + '天' : '术后' + (-dn) + '天'));
@@ -5539,27 +5673,46 @@ button.date-row:active { transform: scale(.997); }
           const rel = task.status === 'overdue' ? '逾期' + task.overdueDays + '天' : (task.status === 'pending' ? '今天' : (task.relative || ''));
           todo = task.label + (rel ? ' · ' + rel : '');
         }
-        text(fit(adm.bed || '—', cols[0] - 18, 20, 700), xs[0], y + rowH / 2, 20, '#0f766e', 700);
-        text(fit(name, cols[1] - 18, 19, 650), xs[1], y + rowH / 2, 19, '#0f172a', 650);
-        text(fit(adm.diagnosis || '—', cols[2] - 18, 19, 400), xs[2], y + rowH / 2, 19, '#334155');
-        text(fit(surgery, cols[3] - 18, 18, 400), xs[3], y + rowH / 2, 18, '#334155');
-        text(fit(todo, cols[4] - 18, 19, 600), xs[4], y + rowH / 2, 19, task && task.status === 'overdue' ? '#dc2626' : '#0f766e', 600);
-        const noteLines = wrap(p.notes || '', cols[5] - 18, 16, 400, 2);
-        if (noteLines.length) {
-          const ny = y + rowH / 2 - (noteLines.length - 1) * 11;
-          noteLines.forEach(function (line, ni) { text(line, xs[5], ny + ni * 22, 16, '#475569'); });
-        }
+        const tagLabels = (p.tags || []).filter(function (id) { return tagOrder.indexOf(id) >= 0; })
+          .sort(function (a, b) { return tagOrder.indexOf(a) - tagOrder.indexOf(b); })
+          .map(function (id) { return tagMap[id] && tagMap[id].label; }).filter(Boolean);
+        const teacher = teacherMap[adm.teacherId] && teacherMap[adm.teacherId].name;
+        const age = p.age != null && p.age !== '' ? String(p.age) : '—';
+        const values = {
+          bed: adm.bed || '—',
+          name: p.name || '—',
+          teacher: teacher || '—',
+          tags: tagLabels.join(' ') || '—',
+          sexAge: (p.sex || '—') + ' ' + age,
+          height: p.height != null && p.height !== '' ? p.height + ' cm' : '—',
+          admissionDate: adm.admissionDate ? UI.fmtDate(adm.admissionDate) : '—',
+          notes: p.notes || '—',
+          diagnosis: adm.diagnosis || '—',
+          surgery: surgery,
+          todo: todo
+        };
+        const sizes = { bed: 32, name: 30, teacher: 28, tags: 26, sexAge: 28, height: 28, admissionDate: 26, diagnosis: 28, surgery: 26, todo: 28, notes: 24 };
+        keys.forEach(function (key, ci) {
+          if (key === 'notes') {
+            const lines = wrap(values[key], cols[ci] - 20, 24, 400, 2);
+            const ny = y + rowH / 2 - (lines.length - 1) * 15;
+            lines.forEach(function (line, li) { text(line, xs[ci], ny + li * 30, 24, '#475569'); });
+            return;
+          }
+          const color = key === 'bed' ? '#0f766e' : (key === 'todo' ? (task && task.status === 'overdue' ? '#dc2626' : '#0f766e') : '#334155');
+          const weight = key === 'bed' ? 750 : (key === 'name' ? 650 : (key === 'todo' ? 650 : 400));
+          text(fit(values[key], cols[ci] - 20, sizes[key], weight), xs[ci], y + rowH / 2, sizes[key], color, weight);
+        });
       });
-      // 底线/页脚
       const fy = top + headerH + items.length * rowH;
       ctx.strokeStyle = '#cbd5e1';
       ctx.beginPath();
       ctx.moveTo(pad, fy);
       ctx.lineTo(W - pad, fy);
       ctx.stroke();
-      text('上次改动：' + lastLabel, pad, fy + 40, 19, '#475569', 600);
+      text('上次改动：' + lastLabel, pad, fy + 48, 28, '#475569', 600);
       ctx.textAlign = 'right';
-      text(root.APP_VERSION || 'dev', W - pad, fy + 40, 18, '#94a3b8', 500);
+      text(root.APP_VERSION || 'dev', W - pad, fy + 48, 26, '#94a3b8', 500);
       ctx.textAlign = 'left';
       canvas.toBlob(function (blob) {
         if (!blob) { UI.toast('图片生成失败'); return; }
