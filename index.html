@@ -345,6 +345,8 @@ a { color: var(--accent); }
 .task-name { font-weight: 700; font-size: 13px; line-height: 1.35; }
 .task-every { color: var(--faint); font-size: 10px; font-weight: 500; margin-left: 4px; white-space: nowrap; }
 .task-rel { color: var(--accent); font-size: 11px; font-weight: 650; white-space: nowrap; }
+.task-status { color: var(--faint); font-size: 10px; font-weight: 700; }
+.task-status.done { color: var(--green); }
 .task-row .task-actions { margin-left: auto; display: flex; align-items: center; gap: 2px; }
 .task-row .icon-btn { padding: 2px 4px; font-size: 14px; }
 .task-row .btn.small { min-height: 28px; padding: 3px 8px; font-size: 12px; border-radius: 8px; }
@@ -596,7 +598,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.11.03.2108';</script>
+<script>window.APP_VERSION = 'v2026.11.03.2119';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -964,14 +966,11 @@ button.date-row:active { transform: scale(.997); }
     let nextDressingDate = '';
     let stitchEnded = false;
 
-    // 备术：排定手术日期后就可见，不只在 D-1；完成一次后隐藏，日期改动会重开。
+    // 备术：排定手术日期后就可见；完成记录跟人走，改手术日期不会重新打开。
     if (surgeryDate) {
       const preopDue = addDays(surgeryDate, -s.preopOffset);
-      const changedAt = admission.surgeryDateChangedAt || '';
       const preopEvents = allEvents.filter(function (e) {
-        if (PREOP_TYPES.indexOf(e.taskType) < 0) return false;
-        if (!changedAt) return true;
-        return !e.createdAt || e.createdAt >= changedAt;
+        return PREOP_TYPES.indexOf(e.taskType) >= 0;
       });
       const term = terminalEvent(preopEvents);
       if (term) {
@@ -2576,6 +2575,8 @@ button.date-row:active { transform: scale(.997); }
       '<button class="task-main" data-act="task-plan" data-admission="' + esc(adm.id) + '" data-type="' + esc(t.type) + '" title="' + planTitle + '">' +
       '<span class="task-name">' + esc(t.label) + '</span>' +
       '<span class="task-rel">' + esc(rel) + '</span>' +
+      (t.status === 'done' ? '<span class="task-status done">已完成</span>' : '') +
+      (t.status === 'not_needed' ? '<span class="task-status">不再需要</span>' : '') +
       '</button>' +
       '<div class="task-actions">' +
       (t.freeTodoId ? '<button class="icon-btn" data-act="free-todo" data-id="' + esc(t.freeTodoId) + '" title="编辑这条待办">✎</button>' : '') +
@@ -3017,7 +3018,7 @@ button.date-row:active { transform: scale(.997); }
       (res.backfilled ? '<div class="small faint" style="margin-top:8px">补录：录入前任务已按默认天数跳过。</div>' : '') +
       (bedHistory ? '<h3 style="margin-top:12px">床位变迁</h3>' + bedHistory : '') +
       '</section>' +
-      '<section class="card todo-card"><div class="card-head"><h2>待办 <span class="small muted">' + ctx.tasks.length + ' 项</span></h2>' +
+      '<section class="card todo-card"><div class="card-head"><h2>待办 <span class="small muted">' + ctx.tasks.filter(function (t) { return t.status === 'pending' || t.status === 'overdue' || t.status === 'upcoming'; }).length + ' 项</span></h2>' +
       '<button class="btn plus tiny add-accent" data-act="todo-menu" data-admission="' + esc(adm.id) + '" aria-label="待办 / 出院" title="待办 / 出院">+</button></div>' +
       '<div class="task-list">' + taskRows + '</div></section>' +
       '</div>' +
@@ -3756,7 +3757,14 @@ button.date-row:active { transform: scale(.997); }
       if (!adm) return null;
       const patient = this.patient(adm.patientId) || { name: '', tags: [] };
       const res = Engine.computeAdmission(adm, this.state.data.events, this.state.data.freeTodos, this.state.data.settings, this.state.today);
-      const tasks = res.current;
+      const tasks = res.current.slice();
+      const preop = res.tasks.find(function (x) { return x.type === 'preop'; });
+      if (preop) {
+        const at = tasks.indexOf(preop);
+        if (at >= 0) tasks.splice(at, 1);
+        // 备术永远在详情最前；已完成也保留在列表里显示状态，不消失。
+        tasks.unshift(preop);
+      }
       return {
         adm: adm, patient: patient, res: res, tasks: tasks,
         todayTasks: tasks.filter((t) => (t.status === 'pending' || t.status === 'overdue')),
