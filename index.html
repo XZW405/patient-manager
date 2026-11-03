@@ -598,7 +598,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.11.03.2119';</script>
+<script>window.APP_VERSION = 'v2026.11.03.2159';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -1395,6 +1395,7 @@ button.date-row:active { transform: scale(.997); }
           return;
         }
         if (task.type === 'discharge') {
+          // 已安排出院就进入任务页提醒；到期当天仍计入今日待办。
           if (task.status === 'overdue') {
             overdue += 1;
             unfinishedToday += 1;
@@ -1403,8 +1404,9 @@ button.date-row:active { transform: scale(.997); }
             todayTodo += 1;
             unfinishedToday += 1;
             addRow(todayGroups.discharge, a, patient, task, false, task.label);
-          } else if (task.status === 'upcoming' && task.dueDate === tomorrow) {
-            addRow(tomorrowGroups.discharge, a, patient, task, false, task.label);
+          } else if (task.status === 'upcoming') {
+            addRow(todayGroups.discharge, a, patient, task, false, task.label);
+            if (task.dueDate === tomorrow) addRow(tomorrowGroups.discharge, a, patient, task, false, task.label);
           }
           return;
         }
@@ -2663,7 +2665,10 @@ button.date-row:active { transform: scale(.997); }
       const openCount = rows.filter(function (r) { return !r.completed; }).length;
       const doneCount = rows.length - openCount;
       const chips = rows.map(function (r) {
-        const taskLabels = (r.labels || []).join(' / ');
+        let taskLabels = (r.labels || []).join(' / ');
+        if (cat === 'discharge' && r.tasks && r.tasks.length && r.tasks[0].dueDate) {
+          taskLabels = '出院 ' + root.UI.fmtDate(r.tasks[0].dueDate);
+        }
         const isFree = !r.admissionId;
         const action = isFree ? 'free-todo' : (r.completed ? 'history' : (r.tasks && r.tasks.length ? 'tasks' : 'detail'));
         const attrs = isFree
@@ -4613,6 +4618,14 @@ button.date-row:active { transform: scale(.997); }
       });
     },
 
+    async clearDischargeEvents(admissionId) {
+      const events = (this.state.data.events || []).filter((e) => e.admissionId === admissionId && e.taskType === 'discharge' && !e.deletedAt);
+      if (!events.length) return;
+      const now = Store.nowISO();
+      events.forEach((e) => { e.deletedAt = now; e.updatedAt = now; });
+      await Store.bulkPut('events', events);
+    },
+
     openDischargeDate(admissionId) {
       const adm = this.admission(admissionId);
       if (!adm || adm.status !== 'admitted') { UI.toast('只有在院患者可以安排出院'); return; }
@@ -4632,6 +4645,7 @@ button.date-row:active { transform: scale(.997); }
               const date = el ? el.value : '';
               if (!Engine.validDate(date)) { UI.toast('日期无效'); return; }
               if (date < self.state.today) { UI.toast('出院日期不能早于今天'); return; }
+              await self.clearDischargeEvents(admissionId);
               adm.dischargeDate = date;
               if (adm.taskPlans) delete adm.taskPlans.discharge;
               adm.updatedAt = Store.nowISO();
@@ -4706,6 +4720,7 @@ button.date-row:active { transform: scale(.997); }
     async restore(id) {
       const adm = this.admission(id);
       if (!adm) return;
+      await this.clearDischargeEvents(id);
       adm.status = 'admitted';
       adm.archivedAt = '';
       adm.dischargeDate = '';
