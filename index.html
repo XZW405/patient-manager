@@ -598,7 +598,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.11.03.2205';</script>
+<script>window.APP_VERSION = 'v2026.11.03.2213';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -2664,10 +2664,7 @@ button.date-row:active { transform: scale(.997); }
       const openCount = rows.filter(function (r) { return !r.completed; }).length;
       const doneCount = rows.length - openCount;
       const chips = rows.map(function (r) {
-        let taskLabels = (r.labels || []).join(' / ');
-        if (cat === 'discharge' && r.tasks && r.tasks.length && r.tasks[0].dueDate) {
-          taskLabels = '出院 ' + root.UI.fmtDate(r.tasks[0].dueDate);
-        }
+        const taskLabels = (r.labels || []).join(' / ');
         const isFree = !r.admissionId;
         const action = isFree ? 'free-todo' : (r.completed ? 'history' : (r.tasks && r.tasks.length ? 'tasks' : 'detail'));
         const attrs = isFree
