@@ -129,6 +129,9 @@ a { color: var(--accent); }
 .page-head h1 { margin: 0; font-size: 24px; letter-spacing: -.03em; }
 .page-head .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
 .page-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.intake-head { display: block; }
+.intake-head-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.intake-head-top h1 { min-width: 0; }
 .section-gap { height: 12px; }
 .ov-chip.free-only { background: color-mix(in srgb, var(--accent-soft) 55%, var(--card)); }
 
@@ -593,7 +596,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.10.28.0139';</script>
+<script>window.APP_VERSION = 'v2026.11.03.2108';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -615,10 +618,9 @@ button.date-row:active { transform: scale(.997); }
     stitchOffset: 14
   };
 
-  const DEFAULT_TASK_ORDER = ['surgery_pending', 'preop', 'surgery', 'drain', 'dressing', 'stitch', 'discharge', 'other'];
+  const DEFAULT_TASK_ORDER = ['preop', 'surgery', 'drain', 'dressing', 'stitch', 'discharge', 'other'];
 
   const TASK_LABELS = {
-    surgery_pending: '排术',
     surgery: '手术',
     preop: '备术',
     preop_film: '备术',
@@ -630,7 +632,6 @@ button.date-row:active { transform: scale(.997); }
   };
 
   const TASK_CATEGORY = {
-    surgery_pending: 'surgery_pending',
     surgery: 'surgery',
     preop: 'preop',
     preop_film: 'preop',
@@ -654,10 +655,9 @@ button.date-row:active { transform: scale(.997); }
     revoked: '撤销处理'
   };
 
-  const CATEGORY_ORDER = ['overdue', 'surgery_pending', 'preop', 'surgery', 'drain', 'dressing', 'stitch', 'discharge', 'other', 'free'];
+  const CATEGORY_ORDER = ['overdue', 'preop', 'surgery', 'drain', 'dressing', 'stitch', 'discharge', 'other', 'free'];
   const CATEGORY_LABELS = {
     overdue: '逾期',
-    surgery_pending: '排术',
     preop: '备术',
     surgery: '手术',
     drain: '拔管',
@@ -964,14 +964,7 @@ button.date-row:active { transform: scale(.997); }
     let nextDressingDate = '';
     let stitchEnded = false;
 
-    // 排术：没有手术日期的在院患者，填上日期后自动消失。
-    if (!surgeryDate) {
-      tasks.push(makeTask(admission, 'surgery_pending', '排术', 'surgery_pending', '', 'pending', [], {
-        pendingSurgery: true
-      }, t));
-    }
-
-    // 备术：排术完成后就可见，不只在 D-1；完成一次后隐藏，日期改动会重开。
+    // 备术：排定手术日期后就可见，不只在 D-1；完成一次后隐藏，日期改动会重开。
     if (surgeryDate) {
       const preopDue = addDays(surgeryDate, -s.preopOffset);
       const changedAt = admission.surgeryDateChangedAt || '';
@@ -1393,12 +1386,7 @@ button.date-row:active { transform: scale(.997); }
       const patient = patientMap[a.patientId];
 
       res.tasks.forEach(function (task) {
-        // 排术：所有未排术的在院患者常驻任务页，没有截止/逾期。
-        if (task.type === 'surgery_pending') {
-          addRow(todayGroups.surgery_pending, a, patient, task, false, task.label);
-          return;
-        }
-        // 备术：从排术完成起全部显示，不只看 D-1 / 明日。
+        // 备术：从排定手术日期起全部显示，不只看 D-1 / 明日。
         if (task.category === 'preop') {
           if (task.status === 'overdue') { overdue += 1; unfinishedToday += 1; }
           if (task.status === 'pending' && task.dueDate === t) { todayTodo += 1; unfinishedToday += 1; }
@@ -2092,7 +2080,7 @@ button.date-row:active { transform: scale(.997); }
       dressingInterval: 2,
       dressingIntervals: [],
       stitchOffset: 14,
-      taskOrder: ['surgery_pending', 'preop', 'surgery', 'drain', 'dressing', 'stitch', 'discharge', 'other'],
+      taskOrder: ['preop', 'surgery', 'drain', 'dressing', 'stitch', 'discharge', 'other'],
       teachers: [
         { id: 't1', name: '张', color: '#7c3aed' },
         { id: 't2', name: '李', color: '#2563eb' }
@@ -2531,7 +2519,7 @@ button.date-row:active { transform: scale(.997); }
   function surgeryLine(app, adm) {
     const name = adm.surgeryName || '';
     const date = adm.surgeryDate || '';
-    if (!name && !date) return '未定手术';
+    if (!name && !date) return '';
     let extra = '';
     if (date) {
       const d = root.Engine.diffDays(date, app.state.today);
@@ -2581,10 +2569,9 @@ button.date-row:active { transform: scale(.997); }
 
   function taskRow(app, adm, t) {
     const canAct = t.status !== 'done' && t.status !== 'not_needed';
-    const pendingSurgery = t.type === 'surgery_pending';
     const rel = t.relative || root.Engine.relativeDayLabel(t.dueDate, app.state.today);
-    const planTitle = pendingSurgery ? '点这里设置手术日期' : '点这里改下一次日期 / 循环天数';
-    const act = pendingSurgery ? 'task-plan' : 'tasks';
+    const planTitle = '点这里改下一次日期 / 循环天数';
+    const act = 'tasks';
     return '<div class="task-row ' + esc(t.status) + (t.type === 'discharge' ? ' discharge' : '') + '">' +
       '<button class="task-main" data-act="task-plan" data-admission="' + esc(adm.id) + '" data-type="' + esc(t.type) + '" title="' + planTitle + '">' +
       '<span class="task-name">' + esc(t.label) + '</span>' +
@@ -2677,7 +2664,7 @@ button.date-row:active { transform: scale(.997); }
       const chips = rows.map(function (r) {
         const taskLabels = (r.labels || []).join(' / ');
         const isFree = !r.admissionId;
-        const action = isFree ? 'free-todo' : (cat === 'surgery_pending' ? 'detail' : (r.completed ? 'history' : (r.tasks && r.tasks.length ? 'tasks' : 'detail')));
+        const action = isFree ? 'free-todo' : (r.completed ? 'history' : (r.tasks && r.tasks.length ? 'tasks' : 'detail'));
         const attrs = isFree
           ? 'data-id="' + esc(r.freeTodoId) + '"'
           : (action === 'tasks' ? 'data-admission="' + esc(r.admissionId) + '"' : 'data-id="' + esc(r.admissionId) + '"');
@@ -2866,7 +2853,7 @@ button.date-row:active { transform: scale(.997); }
       const labels = {
         bed: '床号', name: '姓名', teacher: '管床', tags: '标签', sexAge: '性别年龄',
         height: '身高', admissionDate: '入院日期', notes: '备注',
-        diagnosis: '主诊断', surgery: '手术及日期', todo: '待办'
+        diagnosis: '主诊断', surgery: '手术及日期', todo: '今日任务'
       };
       const cols = app.tableColumns();
       const tagOrder = app.tableTagOrder();
@@ -2886,7 +2873,7 @@ button.date-row:active { transform: scale(.997); }
         if (key === 'notes') return '<td class="notes-cell">' + esc(p.notes || '—') + '</td>';
         if (key === 'diagnosis') return '<td class="diag">' + esc(adm.diagnosis || '—') + '</td>';
         if (key === 'surgery') return '<td class="surgery">' + esc(surgeryLine(app, adm)) + '</td>';
-        if (key === 'todo') return '<td class="todo-cell">' + todoBadge(it.task) + '</td>';
+        if (key === 'todo') return '<td class="todo-cell">' + esc(app.todayTasksText(adm.id)) + '</td>';
         return '<td></td>';
       };
       const rows = items.map(function (it) {
@@ -2908,13 +2895,14 @@ button.date-row:active { transform: scale(.997); }
         if (cf.admissionDate && it.adm.admissionDate) bits.push('入院 ' + root.UI.fmtDate(it.adm.admissionDate));
         const meta = bits.length ? '<div class="pc-surgery">' + esc(bits.join(' · ')) + '</div>' : '';
         const note = cf.notes && it.patient.notes ? '<div class="pc-note">备注：' + esc(it.patient.notes) + '</div>' : '';
-        const reached = !!(it.adm.dischargeDate && it.adm.dischargeDate <= app.state.today);
+        const surgery = surgeryLine(app, it.adm);
+        const reached = app.dischargeDone(it.adm.id);
         return '<button class="patient-card' + (reached ? ' discharged' : '') + '" data-act="detail" data-id="' + esc(it.adm.id) + '">' +
           '<div class="pc-top">' +
           '<span class="pc-bed">' + esc(it.adm.bed) + '</span>' + tb +
           '<span class="pc-name">' + esc(it.patient.name) + '</span></div>' +
           '<div class="pc-diag">' + esc(it.adm.diagnosis || '未填主诊断') + '</div>' +
-          '<div class="pc-surgery">' + esc(surgeryLine(app, it.adm)) + '</div>' +
+          (surgery ? '<div class="pc-surgery">' + esc(surgery) + '</div>' : '') +
           meta + note +
           '<div class="pc-bottom">' + todayBadges(it.todayTasks) +
           (tg ? '<span class="pc-tags">' + tg + '</span>' : '') + '</div>' +
@@ -2950,7 +2938,7 @@ button.date-row:active { transform: scale(.997); }
           '<div class="pc-diag">' + esc(it.adm.diagnosis || '未填主诊断') + '</div>' +
           '<div class="pc-surgery">入院 ' + root.UI.fmtDate(it.adm.admissionDate) + ' · 创建 ' + root.UI.fmtDateTime(it.adm.createdAt) + '</div>' +
           '<div class="row" style="margin-top:4px">' +
-          '<button class="btn small" data-act="edit-intake" data-id="' + esc(it.adm.id) + '">继续填写</button>' +
+          '<button class="btn small" data-act="edit-intake" data-id="' + esc(it.adm.id) + '">详情</button>' +
           '<button class="btn small primary" data-act="promote" data-id="' + esc(it.adm.id) + '">收进组</button>' +
           '<button class="btn small danger" data-act="delete-admission" data-id="' + esc(it.adm.id) + '">删除</button>' +
           '</div></div>';
@@ -3075,13 +3063,15 @@ button.date-row:active { transform: scale(.997); }
     const sel = function (v, target) { return v === target ? ' selected' : ''; };
     const isAdmitted = a.status === 'admitted';
     const assessmentOnly = !!d.assessmentOnly;
-    const title = assessmentOnly ? '编辑入院评估' : (a.id && !isAdmitted ? '继续填写新入院' : '新入院');
+    const title = assessmentOnly ? '编辑入院评估' : (a.id && !isAdmitted ? '入院详情' : '新入院');
     const sub = assessmentOnly
       ? '补充已入院患者信息；只改评估内容，保存后回患者详情'
-      : '先保存草稿；复核后标记管床、收进组才进主患者库';
+      : '保存后仍在待入院；复核后标记管床、收进组才进主患者库';
 
-    return '<div class="page-head"><div><h1>' + title + '</h1><div class="sub">' + sub + '</div></div>' +
-      '<button class="btn ghost" data-act="cancel-intake">取消</button></div>' +
+    return '<div class="page-head intake-head"><div class="intake-head-top"><h1>' + title + '</h1>' +
+      '<div class="page-actions"><button type="button" class="btn primary" data-act="save-intake" data-promote="0">保存</button>' +
+      '<button type="button" class="btn ghost" data-act="cancel-intake">取消</button></div></div>' +
+      '<div class="sub">' + sub + '</div></div>' +
       '<form id="intake-form" class="intake-form" autocomplete="off">' +
       (assessmentOnly
         ? '<div class="form-note">患者：' + val(p.name) + ' · ' + val(a.bed || '未填床号') + '。住院信息请到详情页基本信息卡片右上角编辑。</div>'
@@ -3143,7 +3133,7 @@ button.date-row:active { transform: scale(.997); }
       '</section>' +
       '<section class="card"><h2>备注</h2><div class="field"><textarea name="intakeNotes" placeholder="其他需要记的">' + val(i.notes) + '</textarea></div></section>' +
       '<div class="form-actions">' +
-      '<button type="button" class="btn primary" data-act="save-intake" data-promote="0">' + ((isAdmitted || assessmentOnly) ? '保存' : '保存草稿') + '</button>' +
+      '<button type="button" class="btn primary" data-act="save-intake" data-promote="0">保存</button>' +
       '<button type="button" class="btn ghost" data-act="cancel-intake">取消</button>' +
       '</div>' +
       '</form>';
@@ -3174,7 +3164,7 @@ button.date-row:active { transform: scale(.997); }
         '<input type="text" class="surgery-label" value="' + esc(x.label || '') + '" placeholder="如 TKA">' +
         '<button type="button" class="btn small ghost" data-act="remove-surgery" data-id="' + esc(x.id) + '">删除</button></div>';
     }).join('');
-    const orderLabels = { surgery_pending: '排术', preop: '备术', surgery: '手术', drain: '拔管', dressing: '换药', stitch: '拆线', discharge: '出院', other: '自定义' };
+    const orderLabels = { preop: '备术', surgery: '手术', drain: '拔管', dressing: '换药', stitch: '拆线', discharge: '出院', other: '自定义' };
     const orderRows = app.taskOrder().map(function (k, i, arr) {
       return '<div class="order-row" data-key="' + esc(k) + '">' +
         '<span class="order-name">' + esc(orderLabels[k] || k) + '</span>' +
@@ -3361,7 +3351,7 @@ button.date-row:active { transform: scale(.997); }
   const Zip = root.Zip;
   const Xlsx = root.Xlsx;
   const esc = UI.esc;
-  const TASK_ORDER_LABELS = { surgery_pending: '排术', preop: '备术', surgery: '手术', drain: '拔管', dressing: '换药', stitch: '拆线', discharge: '出院', other: '自定义' };
+  const TASK_ORDER_LABELS = { preop: '备术', surgery: '手术', drain: '拔管', dressing: '换药', stitch: '拆线', discharge: '出院', other: '自定义' };
 
   const App = {
     state: {
@@ -3769,12 +3759,47 @@ button.date-row:active { transform: scale(.997); }
       const tasks = res.current;
       return {
         adm: adm, patient: patient, res: res, tasks: tasks,
-        todayTasks: tasks.filter((t) => (t.status === 'pending' || t.status === 'overdue') && t.type !== 'surgery_pending'),
+        todayTasks: tasks.filter((t) => (t.status === 'pending' || t.status === 'overdue')),
         primary: this.primaryOf(res)
       };
     },
     primaryOf(res) {
       return res.current[0] || null;
+    },
+    dischargeDone(admissionId) {
+      const ctx = this.context(admissionId);
+      if (!ctx) return false;
+      const t = ctx.res.tasks.find(function (x) { return x.type === 'discharge'; });
+      return !!(t && t.status === 'done');
+    },
+    todayTasksText(admissionId) {
+      const ctx = this.context(admissionId);
+      if (!ctx) return '—';
+      const today = this.state.today;
+      const rows = [];
+      const seen = {};
+      const add = function (label, done, notNeeded) {
+        const key = String(label);
+        if (!key) return;
+        if (seen[key]) {
+          if (done) seen[key].done = true;
+          return;
+        }
+        seen[key] = { label: key, done: !!done, notNeeded: !!notNeeded };
+        rows.push(seen[key]);
+      };
+      ctx.res.tasks.forEach(function (t) {
+        if (t.dueDate !== today) return;
+        const done = t.status === 'done' || t.status === 'not_needed';
+        add(t.label, done, t.status === 'not_needed');
+      });
+      ctx.res.completedToday.forEach(function (c) { add(c.label, true, false); });
+      if (ctx.adm.surgeryDate === today) add('手术', false, false);
+      if (!rows.length) return '—';
+      return rows.map(function (x) {
+        if (x.notNeeded) return x.label + '（不做）';
+        return (x.done ? '✓' : '') + x.label;
+      }).join('、');
     },
     lastChangedAt() {
       const d = this.state.data || {};
@@ -4151,7 +4176,7 @@ button.date-row:active { transform: scale(.997); }
       this.state.page = willAdmit ? 'detail' : (ret.page || 'pending');
       this.state.selectedId = admissionId;
       await this.reload();
-      UI.toast(promote ? '已收进组' : (willAdmit ? '已保存' : '已保存草稿'));
+      UI.toast(promote ? '已收进组' : '已保存');
       root.scrollTo(0, 0);
     },
 
@@ -4176,7 +4201,7 @@ button.date-row:active { transform: scale(.997); }
         '<div class="field" style="grid-column:1/-1"><label>主诊断 *</label><input name="diagnosis" value="' + UI.esc(adm.diagnosis || '') + '"></div>' +
         this.quickPickHtml(true) +
         '<div class="field"><label>手术名称</label><input name="surgeryName" value="' + UI.esc(adm.surgeryName || '') + '"></div>' +
-        '<div class="field"><label>手术日期</label><div class="date-clear"><input name="surgeryDate" type="date" value="' + UI.esc(adm.surgeryDate || '') + '"><button type="button" class="btn small ghost" data-act="clear-surgery-date" data-admission="' + UI.esc(adm.id) + '" title="清空手术日期并进入排术">待定</button></div></div>' +
+        '<div class="field"><label>手术日期</label><div class="date-clear"><input name="surgeryDate" type="date" value="' + UI.esc(adm.surgeryDate || '') + '"><button type="button" class="btn small ghost" data-act="clear-surgery-date" data-admission="' + UI.esc(adm.id) + '" title="清空手术日期">待定</button></div></div>' +
         '<div class="field" style="grid-column:1/-1"><label>备注</label><textarea name="notes" placeholder="如 糖尿病、抗凝药、家属联系方式…">' + UI.esc(p.notes || '') + '</textarea></div>' +
         '<div class="field" style="grid-column:1/-1"><label>管床</label>' + this.teacherPickHtml(adm.teacherId || '', true) + '</div>' +
         '<div class="field" style="grid-column:1/-1"><label>标签</label><div class="row">' + (tags || '<span class="faint small">设置里先添加标签</span>') + '</div></div>' +
@@ -4206,7 +4231,7 @@ button.date-row:active { transform: scale(.997); }
       const admissionId = el.getAttribute('data-admission') || '';
       if (!admissionId) {
         el.textContent = '已待定';
-        UI.toast('已清空手术日期；保存后进入排术');
+        UI.toast('已清空手术日期；保存后无手术日期');
         return;
       }
       const adm = this.admission(admissionId);
@@ -4219,7 +4244,7 @@ button.date-row:active { transform: scale(.997); }
       await this.reload();
       const backdrop = el.closest('.modal-backdrop');
       if (backdrop) backdrop.remove();
-      UI.toast(adm.status === 'admitted' ? '已设为待定，已进入排术' : '已清空手术日期');
+      UI.toast('已清空手术日期');
     },
 
     async saveAdmission(id) {
@@ -4722,7 +4747,7 @@ button.date-row:active { transform: scale(.997); }
         return t ? '<span class="tag" style="background:' + UI.esc(t.color || '#64748b') + '">' + UI.esc(t.label) + '</span>' : '';
       }).join('');
       const surgeryDay = adm.surgeryDate ? Engine.diffDays(this.state.today, adm.surgeryDate) : null;
-      const postop = surgeryDay == null ? '未排手术' :
+      const postop = surgeryDay == null ? '—' :
         (surgeryDay === 0 ? '手术日' : (surgeryDay > 0 ? '术后 ' + surgeryDay + ' 天' : '术前 ' + (-surgeryDay) + ' 天'));
       const teacher = this.teacherName(adm.teacherId);
       const info = '<div class="task-patient">' +
@@ -4732,7 +4757,7 @@ button.date-row:active { transform: scale(.997); }
         '<button class="btn small ghost task-detail-btn" data-act="task-detail" data-id="' + UI.esc(adm.id) + '">详情</button></div>' +
         '<div class="task-patient-line"><b>主诊断</b> ' + UI.esc(adm.diagnosis || '—') + '</div>' +
         '<div class="task-patient-line"><b>术式</b> ' + UI.esc(adm.surgeryName || '—') +
-        ' <b>手术日期</b> ' + UI.esc(adm.surgeryDate ? UI.fmtDateFull(adm.surgeryDate) : '未定') +
+        ' <b>手术日期</b> ' + UI.esc(adm.surgeryDate ? UI.fmtDateFull(adm.surgeryDate) : '—') +
         ' · ' + UI.esc(postop) + '</div>' +
         '<div class="task-patient-line"><b>管床</b> ' + UI.esc(teacher) +
         (adm.admissionDate ? ' <b>入院</b> ' + UI.esc(UI.fmtDateFull(adm.admissionDate)) : '') + '</div>' +
@@ -4763,10 +4788,6 @@ button.date-row:active { transform: scale(.997); }
       if (!ctx) { UI.toast('找不到患者'); return; }
       const task = ctx.res.tasks.find((t) => t.type === type);
       if (!task) { UI.toast('找不到这个任务'); return; }
-      if (task.type === 'surgery_pending') {
-        this.openEditAdmission(admissionId);
-        return;
-      }
       const adm = ctx.adm;
       const isDressing = task.kind === 'dressing' && task.type.indexOf('free:') !== 0;
       const plan = isDressing
@@ -5591,7 +5612,7 @@ button.date-row:active { transform: scale(.997); }
       const labels = {
         bed: '床号', name: '姓名', teacher: '管床', tags: '标签', sexAge: '性别年龄',
         height: '身高', admissionDate: '入院日期', notes: '备注',
-        diagnosis: '主诊断', surgery: '手术及日期', todo: '待办'
+        diagnosis: '主诊断', surgery: '手术及日期', todo: '今日任务'
       };
       const weights = {
         bed: 1.4, name: 1.4, teacher: 1.2, tags: 1.1, sexAge: 1.0, height: 0.9,
@@ -5685,13 +5706,7 @@ button.date-row:active { transform: scale(.997); }
         const post = dn == null ? '' : (dn === 0 ? '手术日' : (dn > 0 ? '术前' + dn + '天' : '术后' + (-dn) + '天'));
         const surgeryName = adm.surgeryName || '';
         const surgeryDatePost = [sd ? UI.fmtDate(sd) : '', post].filter(Boolean).join(' · ');
-        const surgery = [surgeryName, surgeryDatePost].filter(Boolean).join(' · ') || '未定手术';
-        const task = it.task;
-        let todo = '—';
-        if (task) {
-          const rel = task.status === 'overdue' ? '逾期' + task.overdueDays + '天' : (task.status === 'pending' ? '今天' : (task.relative || ''));
-          todo = task.label + (rel ? ' · ' + rel : '');
-        }
+        const surgery = [surgeryName, surgeryDatePost].filter(Boolean).join(' · ') || '';
         const tagLabels = (p.tags || []).filter(function (id) { return tagOrder.indexOf(id) >= 0; })
           .sort(function (a, b) { return tagOrder.indexOf(a) - tagOrder.indexOf(b); })
           .map(function (id) { return tagMap[id] && tagMap[id].label; }).filter(Boolean);
@@ -5708,10 +5723,16 @@ button.date-row:active { transform: scale(.997); }
           notes: p.notes || '—',
           diagnosis: adm.diagnosis || '—',
           surgery: surgery,
-          todo: todo
+          todo: self.todayTasksText(adm.id)
         };
         const sizes = { bed: 34, name: 34, teacher: 30, tags: 28, sexAge: 30, height: 30, admissionDate: 28, diagnosis: 32, surgery: 30, todo: 30, notes: 28 };
         keys.forEach(function (key, ci) {
+          if (key === 'todo') {
+            const lines = wrap(values[key], cols[ci] - 18, 28, 650, 2);
+            const ty = y + rowH / 2 - (lines.length - 1) * 17;
+            lines.forEach(function (line, li) { text(line, xs[ci], ty + li * 34, 28, '#0f766e', 650); });
+            return;
+          }
           if (key === 'notes') {
             const lines = wrap(values[key], cols[ci] - 18, 28, 400, 2);
             const ny = y + rowH / 2 - (lines.length - 1) * 17;
@@ -5723,7 +5744,7 @@ button.date-row:active { transform: scale(.997); }
             if (surgeryDatePost) text(fit(surgeryDatePost, cols[ci] - 18, 26, 400), xs[ci], y + rowH / 2 + 18, 26, '#64748b');
             return;
           }
-          const color = key === 'bed' ? '#0f766e' : (key === 'todo' ? (task && task.status === 'overdue' ? '#dc2626' : '#0f766e') : '#334155');
+          const color = key === 'bed' ? '#0f766e' : (key === 'todo' ? '#0f766e' : '#334155');
           const weight = key === 'bed' ? 750 : (key === 'name' ? 650 : (key === 'todo' ? 650 : 400));
           text(fit(values[key], cols[ci] - 18, sizes[key], weight), xs[ci], y + rowH / 2, sizes[key], color, weight);
         });
