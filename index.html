@@ -598,7 +598,7 @@ button.date-row:active { transform: scale(.997); }
 <div id="toast" class="toast" role="status"></div>
 <div id="modal-root"></div>
 <noscript><div class="boot">需要开启 JavaScript 才能使用。</div></noscript>
-<script>window.APP_VERSION = 'v2026.11.03.2159';</script>
+<script>window.APP_VERSION = 'v2026.11.03.2205';</script>
 <script>/* ==== src/engine.js ==== */
 /*
  * 病人管理系统 - 任务引擎
@@ -1395,7 +1395,7 @@ button.date-row:active { transform: scale(.997); }
           return;
         }
         if (task.type === 'discharge') {
-          // 已安排出院就进入任务页提醒；到期当天仍计入今日待办。
+          // 出院只在当天任务页出现；明日视图可提前看到明天的出院。
           if (task.status === 'overdue') {
             overdue += 1;
             unfinishedToday += 1;
@@ -1404,9 +1404,8 @@ button.date-row:active { transform: scale(.997); }
             todayTodo += 1;
             unfinishedToday += 1;
             addRow(todayGroups.discharge, a, patient, task, false, task.label);
-          } else if (task.status === 'upcoming') {
-            addRow(todayGroups.discharge, a, patient, task, false, task.label);
-            if (task.dueDate === tomorrow) addRow(tomorrowGroups.discharge, a, patient, task, false, task.label);
+          } else if (task.status === 'upcoming' && task.dueDate === tomorrow) {
+            addRow(tomorrowGroups.discharge, a, patient, task, false, task.label);
           }
           return;
         }
